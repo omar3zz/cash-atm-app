@@ -1,64 +1,123 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CashSwap - نظام تبادل الكاش الذكي</title>
+    <style>
+        :root {
+            --primary-color: #0f172a;
+            --secondary-color: #1e293b;
+            --accent-color: #10b981;
+            --accent-hover: #059669;
+            --bg-color: #f1f5f9;
+            --text-color: #334155;
+            --white: #ffffff;
+            --danger: #ef4444;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; }
+        header { background-color: var(--primary-color); color: var(--white); padding: 20px; text-align: center; box-shadow: var(--shadow); position: relative; }
+        header h1 { font-size: 1.5rem; font-weight: 700; }
+        header .admin-btn { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; cursor: pointer; }
+        main { flex: 1; overflow-y: auto; padding: 20px; max-width: 600px; margin: 0 auto; width: 100%; }
+        .tabs { display: flex; margin-bottom: 20px; background: var(--white); border-radius: 12px; padding: 5px; box-shadow: var(--shadow); }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; border-radius: 8px; font-weight: 600; cursor: pointer; color: var(--text-color); }
+        .tab-btn.active { background-color: var(--primary-color); color: var(--white); }
+        .card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: var(--shadow); margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: var(--secondary-color); }
+        input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; outline: none; background: #f8fafc; }
+        input:focus { border-color: var(--accent-color); background: var(--white); }
+        .btn-action { width: 100%; padding: 16px; background-color: var(--accent-color); color: var(--white); border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+        .item-list { list-style: none; }
+        .list-item { border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 12px; background: var(--white); display: flex; justify-content: space-between; align-items: center; }
+        .item-info h3 { font-size: 1.1rem; color: var(--primary-color); margin-bottom: 5px; }
+        .price-tag { font-weight: 800; font-size: 1.3rem; color: var(--accent-color); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: var(--white); padding: 25px; border-radius: 16px; width: 100%; max-width: 350px; position: relative; }
+        .close-modal { position: absolute; left: 15px; top: 15px; font-size: 1.5rem; cursor: pointer; color: #64748b; }
+        .toast { position: fixed; bottom: 20px; right: 20px; left: 20px; background: var(--primary-color); color: var(--white); padding: 15px; border-radius: 10px; text-align: center; transform: translateY(150%); transition: transform 0.3s; z-index: 200; }
+        .toast.show { transform: translateY(0); }
+        .hidden { display: none; }
+        .text-center { text-align: center; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CashSwap</h1>
+        <button class="admin-btn" onclick="openAdminModal()">مدير</button>
+    </header>
+    <main>
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-request" onclick="switchTab('request')">طلب سحب كاش</button>
+            <button class="tab-btn" id="tab-supply" onclick="switchTab('supply')">كاش متاح</button>
+        </div>
+        <section id="view-request">
+            <div class="card">
+                <h2 class="text-center" style="margin-bottom: 20px;">طلب كاش نقدي</h2>
+                <form id="requestForm" onsubmit="submitRequest(event)">
+                    <div class="form-group">
+                        <label>المبلغ المطلوب ($)</label>
+                        <input type="number" id="reqAmount" placeholder="مثال: 5000" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>الموقع (منطقة / حي)</label>
+                        <input type="text" id="reqLocation" placeholder="أدخل اسم المنطقة" required>
+                    </div>
+                    <div class="form-group">
+                        <label>رقم الهاتف للتواصل</label>
+                        <input type="tel" id="reqPhone" placeholder="01xxxxxxxx" required>
+                    </div>
+                    <button type="submit" class="btn-action">إرسال الطلب</button>
+                </form>
+            </div>
+        </section>
+        <section id="view-supply" class="hidden">
+            <div class="card">
+                <h2 class="text-center">طلبات قريبة</h2>
+                <p class="text-center" style="color: #64748b; margin-bottom: 15px;">هامش ربح الموقع الحالي: <span id="currentMarginDisplay">2</span>%</p>
+                <ul class="item-list" id="requestsList"></ul>
+            </div>
+        </section>
+    </main>
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeAdminModal()">&times;</span>
             <h2 class="text-center" style="margin-bottom: 20px;">لوحة تحكم المدير</h2>
-            
             <div id="admin-login-sec">
                 <div class="form-group">
                     <label>كلمة المرور</label>
-                    <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور (الافتراضية 1234)">
+                    <input type="password" id="adminPassword" placeholder="الباسورد الافتراضي 1234">
                 </div>
                 <button class="btn-action" onclick="checkAdminPassword()">تسجيل دخول</button>
             </div>
-
             <div id="admin-settings-sec" class="hidden">
                 <div class="form-group">
                     <label>تعديل هامش ربح الموقع (%)</label>
                     <input type="number" id="profitMarginInput" min="0" max="100" step="0.1">
                 </div>
                 <button class="btn-action" onclick="saveProfitMargin()">حفظ التعديلات</button>
-                <button class="btn-action secondary mt-2" onclick="logoutAdmin()">خروج من لوحة التحكم</button>
             </div>
         </div>
     </div>
-
     <div id="toast" class="toast">تمت العملية بنجاح!</div>
-
     <script>
-        // --- إدارة البيانات وحالة النظام ---
-        let state = {
-            profitMargin: 2.0, // نسبة الربح الافتراضية 2%
-            requests: []
-        };
-
-        // تحميل البيانات من الـ LocalStorage لتشتغل أوتوماتيك
+        let state = { profitMargin: 2.0, requests: [] };
         function loadData() {
-            const savedMargin = localStorage.getItem('cashswap_margin');
+            const savedMargin = localStorage.getItem('cash_margin');
             if (savedMargin) state.profitMargin = parseFloat(savedMargin);
-
-            const savedRequests = localStorage.getItem('cashswap_requests');
-            if (savedRequests) {
-                state.requests = JSON.parse(savedRequests);
-            } else {
-                // بيانات تجريبية لو التطبيق أول مرة يفتح
-                state.requests = [
-                    { id: 1, amount: 2000, location: "الحي الأول", phone: "01012345678", date: new Date().toLocaleTimeString() },
-                    { id: 2, amount: 5000, location: "العبور - الحي الخامس", phone: "01234567890", date: new Date().toLocaleTimeString() }
-                ];
-                saveRequestsToStorage();
-            }
+            const savedReqs = localStorage.getItem('cash_reqs');
+            if (savedReqs) state.requests = JSON.parse(savedReqs);
             document.getElementById('currentMarginDisplay').innerText = state.profitMargin;
             document.getElementById('profitMarginInput').value = state.profitMargin;
         }
-
-        function saveRequestsToStorage() {
-            localStorage.setItem('cashswap_requests', JSON.stringify(state.requests));
-        }
-
-        // --- التنقل بين التبويبات (Tabs) ---
         function switchTab(tab) {
             document.getElementById('tab-request').classList.remove('active');
             document.getElementById('tab-supply').classList.remove('active');
             document.getElementById('view-request').classList.add('hidden');
             document.getElementById('view-supply').classList.add('hidden');
-
             if (tab === 'request') {
                 document.getElementById('tab-request').classList.add('active');
                 document.getElementById('view-request').classList.remove('hidden');
@@ -68,126 +127,62 @@
                 renderRequests();
             }
         }
-
-        // --- إرسال طلب جديد من العميل ---
         function submitRequest(event) {
             event.preventDefault();
-            
             const amount = parseFloat(document.getElementById('reqAmount').value);
             const location = document.getElementById('reqLocation').value;
             const phone = document.getElementById('reqPhone').value;
-
-            // أمن البيانات والتأكد من صحتها
-            if(amount <= 0 || location.trim() === "" || phone.trim() === "") {
-                showToast("من فضلك أدخل بيانات صحيحة");
-                return;
-            }
-
-            const newRequest = {
-                id: Date.now(),
-                amount: amount,
-                location: location,
-                phone: phone,
-                date: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-            };
-
-            state.requests.unshift(newRequest); // إضافة الطلب في أول القائمة
-            saveRequestsToStorage();
-            
-            showToast("تم نشر طلبك بنجاح وجاري البحث عن كاش قريب!");
+            const newRequest = { id: Date.now(), amount, location, phone, date: new Date().toLocaleTimeString('ar-EG') };
+            state.requests.unshift(newRequest);
+            localStorage.setItem('cash_reqs', JSON.stringify(state.requests));
+            showToast("تم نشر طلبك بنجاح!");
             document.getElementById('requestForm').reset();
-            
-            // تحويله تلقائياً لصفحة الطلبات لرؤية النتيجة
             setTimeout(() => switchTab('supply'), 1000);
         }
-
-        // --- عرض قائمة الطلبات وحساب هامش الربح ---
         function renderRequests() {
-            const listContainer = document.getElementById('requestsList');
-            listContainer.innerHTML = "";
-
+            const list = document.getElementById('requestsList');
+            list.innerHTML = "";
             if (state.requests.length === 0) {
-                listContainer.innerHTML = `<li class="text-center" style="padding: 20px; color: #94a3b8;">لا توجد طلبات متاحة حالياً</li>`;
+                list.innerHTML = `<li class="text-center" style="padding: 20px; color: #94a3b8;">لا توجد طلبات حالياً</li>`;
                 return;
             }
-
             state.requests.forEach(req => {
-                // الحسبة التلقائية لهامش الربح بناءً على النسبة المحددة في لوحة التحكم
-                const systemFee = (req.amount * (state.profitMargin / 100)).toFixed(2);
-                const totalWithFee = (req.amount + parseFloat(systemFee)).toFixed(2);
-
+                const fee = (req.amount * (state.profitMargin / 100)).toFixed(2);
                 const li = document.createElement('li');
                 li.className = 'list-item';
                 li.innerHTML = `
                     <div class="item-info">
-                        <h3>مطلوب كاش: ${req.amount} ج.م</h3>
+                        <h3>مطلوب كاش: ${req.amount}</h3>
                         <p>📍 الموقع: ${req.location}</p>
-                        <p>⏰ الوقت: ${req.date}</p>
-                        <span class="fee-display">رسوم التطبيق المستحقة: ${systemFee} ج.م (شاملة النسبة)</span>
+                        <p style="font-size:0.8rem; color:#94a3b8;">الرسوم المحسوبة للموقع: ${fee}</p>
                     </div>
-                    <div style="text-align: left;">
-                        <span class="price-tag">${req.amount}</span>
-                        <a href="tel:${req.phone}" class="btn-action" style="padding: 8px 12px; font-size:0.85rem; text-decoration:none; display:block; margin-top:8px; text-align:center;">
-                            تلبية وتواصل
-                        </a>
-                    </div>
-                `;
-                listContainer.appendChild(li);
+                    <div>
+                        <a href="tel:${req.phone}" class="btn-action" style="padding: 8px 12px; font-size:0.85rem; text-decoration:none;">تواصل</a>
+                    </div>`;
+                list.appendChild(li);
             });
         }
-
-        // --- إدارة لوحة تحكم المدير (Admin Section) ---
-        function openAdminModal() {
-            document.getElementById('adminModal').style.display = 'flex';
-        }
-
-        function closeAdminModal() {
-            document.getElementById('adminModal').style.display = 'none';
-        }
-
+        function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
+        function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
         function checkAdminPassword() {
-            const pass = document.getElementById('adminPassword').value;
-            // البلاك بوكس هنا بيقفل اللوحة بكلمة مرور مخصصة تقدر تعدلها
-            if (pass === '1234') { 
+            if (document.getElementById('adminPassword').value === '1234') {
                 document.getElementById('admin-login-sec').classList.add('hidden');
                 document.getElementById('admin-settings-sec').classList.remove('hidden');
-                document.getElementById('adminPassword').value = "";
-            } else {
-                showToast("كلمة المرور غير صحيحة!");
-            }
+            } else { showToast("الباسورد خطأ!"); }
         }
-
         function saveProfitMargin() {
-            const newMargin = parseFloat(document.getElementById('profitMarginInput').value);
-            if (newMargin >= 0 && newMargin <= 100) {
-                state.profitMargin = newMargin;
-                localStorage.setItem('cashswap_margin', newMargin);
-                document.getElementById('currentMarginDisplay').innerText = newMargin;
-                showToast("تم تحديث نسبة هامش الربح أوتوماتيكياً!");
-                closeAdminModal();
-                renderRequests(); // إعادة حساب وتحديث الواجهة مباشرة
-            } else {
-                showToast("من فضلك أدخل نسبة صحيحة بين 0 و 100");
-            }
-        }
-
-        function logoutAdmin() {
-            document.getElementById('admin-settings-sec').classList.add('hidden');
-            document.getElementById('admin-login-sec').classList.remove('hidden');
+            const val = parseFloat(document.getElementById('profitMarginInput').value);
+            state.profitMargin = val;
+            localStorage.setItem('cash_margin', val);
+            document.getElementById('currentMarginDisplay').innerText = val;
+            showToast("تم تحديث الهامش!");
             closeAdminModal();
+            if(!document.getElementById('view-supply').classList.contains('hidden')) renderRequests();
         }
-
-        // --- نظام الإشعارات والتنبيهات (Toast) ---
-        function showToast(text) {
-            const toast = document.getElementById('toast');
-            toast.innerText = text;
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+        function showToast(msg) {
+            const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
         }
-
-        // تشغيل التطبيق وسحب البيانات فور فتح الصفحة
         window.onload = loadData;
     </script>
 </body>
