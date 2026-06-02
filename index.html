@@ -38,6 +38,7 @@
                         'slide-up': 'slideUp 0.3s ease-out',
                         'nfc-scan': 'nfcScan 1.5s ease-in-out infinite',
                         'bot-pulse': 'botPulse 2s ease-in-out infinite',
+                        'spin-slow': 'spin 3s linear infinite',
                     },
                     keyframes: {
                         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
@@ -52,13 +53,14 @@
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { height: 100%; width: 100%; }
-        body { font-family: 'Cairo', sans-serif; background: #0a0e17; color: #e0e0e0; }
+        html, body { height: 100%; width: 100%; font-family: 'Cairo', sans-serif; }
+        body { background: #0a0e17; color: #e0e0e0; }
         
         .gradient-primary { background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%); }
         .gradient-success { background: linear-gradient(135deg, #00c853 0%, #00a844 100%); }
         .gradient-bot { background: linear-gradient(135deg, #6a4c93 0%, #4a3073 100%); }
         .gradient-market { background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%); }
+        .gradient-login { background: linear-gradient(135deg, #0066ff 0%, #00c853 100%); }
         
         .nfc-pulse { animation: nfcScan 1.5s ease-in-out infinite; }
         .bot-pulse { animation: botPulse 2s ease-in-out infinite; }
@@ -74,29 +76,277 @@
         input:focus { outline: none; border-color: #0066ff; }
         input::placeholder { color: #666; }
         
-        .btn-disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .transaction-item { border-left: 4px solid #0066ff; }
-        .transaction-item.success { border-left-color: #00c853; }
-        .transaction-item.pending { border-left-color: #ffab00; }
-        
-        .currency-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; }
-        .currency-up { background: rgba(0, 200, 83, 0.2); color: #00c853; }
-        .currency-down { background: rgba(255, 82, 82, 0.2); color: #ff5252; }
-        
         .health-indicator { width: 12px; height: 12px; border-radius: 50%; animation: botPulse 2s infinite; }
         .health-good { background: #00c853; }
         .health-warning { background: #ffab00; }
         .health-error { background: #ff5252; }
         
+        .currency-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        .currency-up { background: rgba(0, 200, 83, 0.2); color: #00c853; }
+        .currency-down { background: rgba(255, 82, 82, 0.2); color: #ff5252; }
+        
+        .rate-card { transition: all 0.3s ease; }
+        .rate-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0, 102, 255, 0.2); }
+        
+        .input-field { 
+            width: 100%; 
+            background: #1a2235; 
+            border: 1px solid #2a3548; 
+            border-radius: 8px; 
+            padding: 12px 16px; 
+            color: white;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            border-color: #0066ff;
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+        }
+        
+        .input-field::placeholder { color: #666; }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 102, 255, 0.3); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0a0e17 0%, #131a2a 100%);
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(0, 102, 255, 0.2);
+            border-top: 3px solid #0066ff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .validation-error {
+            color: #ff5252;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        .success-checkmark {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 2;
+            stroke: #00c853;
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        
+        @keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+        
+        .animate-fade-in-up {
+            animation: slideUp 0.5s ease-out;
+        }
+
         @media (max-width: 480px) {
             .text-lg { font-size: 1rem; }
             .text-2xl { font-size: 1.25rem; }
+            .text-3xl { font-size: 1.5rem; }
+            
+            .input-field { padding: 10px 12px; font-size: 16px; }
+            .btn-primary { padding: 10px 16px; font-size: 13px; }
         }
     </style>
 </head>
 <body class="bg-cs-dark">
-    <div id="app" class="flex flex-col h-screen bg-cs-dark">
+    
+    <!-- Auth Container (Initially visible) -->
+    <div id="authContainer" class="auth-container">
+        <!-- Login Form -->
+        <div id="loginForm" class="w-full max-w-md px-6 animate-fade-in-up">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-exchange-alt text-white text-2xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white mb-2">CashSwap Pro</h1>
+                <p class="text-gray-400">منصة الصرف الآلي والعملات</p>
+            </div>
+
+            <form id="loginFormElement" class="space-y-4 mb-6">
+                <div>
+                    <label class="text-sm text-gray-300 block mb-2">البريد الإلكتروني</label>
+                    <input 
+                        type="email" 
+                        id="loginEmail" 
+                        placeholder="أدخل بريدك الإلكتروني"
+                        class="input-field"
+                        required
+                    >
+                    <div class="validation-error" id="emailError"></div>
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-300 block mb-2">كلمة المرور</label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="loginPassword" 
+                            placeholder="أدخل كلمة المرور"
+                            class="input-field"
+                            required
+                        >
+                        <button type="button" id="togglePassword" class="absolute left-4 top-3 text-gray-400 hover:text-gray-300">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="validation-error" id="passwordError"></div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="rememberMe" class="w-4 h-4 rounded">
+                    <label for="rememberMe" class="text-sm text-gray-400">تذكرني</label>
+                </div>
+
+                <button type="submit" id="loginBtn" class="w-full btn-primary py-3 mt-6">
+                    <i class="fas fa-sign-in-alt ml-2"></i>
+                    دخول الحساب
+                </button>
+            </form>
+
+            <div class="border-t border-cs-border pt-6 mt-6">
+                <p class="text-center text-gray-400 text-sm mb-4">ليس لديك حساب؟</p>
+                <button id="switchToSignupBtn" class="w-full bg-cs-surface hover:bg-cs-border transition py-3 rounded-lg text-gray-300 font-semibold">
+                    <i class="fas fa-user-plus ml-2"></i>
+                    إنشاء حساب جديد
+                </button>
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-cs-border">
+                <button id="demoLoginBtn" class="w-full bg-cs-bot hover:bg-opacity-80 transition text-white py-3 rounded-lg font-semibold text-sm">
+                    <i class="fas fa-vial ml-2"></i>
+                    تجربة الحساب التجريبي
+                </button>
+            </div>
+        </div>
+
+        <!-- Signup Form -->
+        <div id="signupForm" class="w-full max-w-md px-6 animate-fade-in-up hidden">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 gradient-success rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-user-check text-white text-2xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white mb-2">إنشاء حساب</h1>
+                <p class="text-gray-400">انضم لمنصة CashSwap Pro</p>
+            </div>
+
+            <form id="signupFormElement" class="space-y-4 mb-6">
+                <div>
+                    <label class="text-sm text-gray-300 block mb-2">الاسم الكامل</label>
+                    <input 
+                        type="text" 
+                        id="signupName" 
+                        placeholder="أدخل اسمك الكامل"
+                        class="input-field"
+                        required
+                    >
+                    <div class="validation-error" id="nameError"></div>
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-300 block mb-2">البريد الإلكتروني</label>
+                    <input 
+                        type="email" 
+                        id="signupEmail" 
+                        placeholder="أدخل بريدك الإلكتروني"
+                        class="input-field"
+                        required
+                    >
+                    <div class="validation-error" id="signupEmailError"></div>
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-300 block mb-2">رقم الهاتف</label>
+                    <input 
+                        type="tel" 
+                        id="signupPhone" 
+                        placeholder="أدخل رقم هاتفك"
+                        class="input-field"
+                        required
+                    >
+                    <div class="validation-error" id="phoneError"></div>
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-300 block mb-2">كلمة المرور</label>
+                    <input 
+                        type="password" 
+                        id="signupPassword" 
+                        placeholder="اختر كلمة مرور قوية"
+                        class="input-field"
+                        required
+                    >
+                    <div class="validation-error" id="signupPasswordError"></div>
+                    <p class="text-xs text-gray-500 mt-2">الحد الأدنى 8 أحرف</p>
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-300 block mb-2">تأكيد كلمة المرور</label>
+                    <input 
+                        type="password" 
+                        id="signupConfirm" 
+                        placeholder="أعد إدخال كلمة المرور"
+                        class="input-field"
+                        required
+                    >
+                    <div class="validation-error" id="confirmError"></div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="agreeTerms" class="w-4 h-4 rounded">
+                    <label for="agreeTerms" class="text-sm text-gray-400">أوافق على الشروط والأحكام</label>
+                </div>
+
+                <button type="submit" id="signupBtn" class="w-full btn-primary py-3 mt-6">
+                    <i class="fas fa-user-plus ml-2"></i>
+                    إنشاء الحساب
+                </button>
+            </form>
+
+            <div class="text-center mt-6">
+                <button id="switchToLoginBtn" class="text-cs-primary hover:text-blue-400 text-sm font-semibold">
+                    العودة إلى تسجيل الدخول
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container (Hidden initially) -->
+    <div id="appContainer" class="hidden flex flex-col h-screen bg-cs-dark">
         
         <!-- Header -->
         <header class="bg-cs-card border-b border-cs-border sticky top-0 z-40 shadow-lg">
@@ -108,7 +358,7 @@
                         </div>
                         <div>
                             <h1 class="text-lg font-bold text-white">CashSwap Pro</h1>
-                            <p class="text-xs text-gray-400">منصة العملات الذكية</p>
+                            <p class="text-xs text-gray-400" id="userWelcome">مرحباً</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
@@ -120,8 +370,8 @@
                             <i class="fas fa-bell text-cs-primary text-lg"></i>
                             <span id="notifBadge" class="absolute top-1 right-1 w-2 h-2 bg-cs-danger rounded-full"></span>
                         </button>
-                        <button id="profileBtn" class="p-2 hover:bg-cs-surface rounded-lg transition">
-                            <i class="fas fa-user-circle text-cs-primary text-lg"></i>
+                        <button id="logoutBtn" class="p-2 hover:bg-cs-surface rounded-lg transition" title="تسجيل الخروج">
+                            <i class="fas fa-sign-out-alt text-cs-danger text-lg"></i>
                         </button>
                     </div>
                 </div>
@@ -137,7 +387,7 @@
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <p class="text-sm opacity-90 mb-2">الرصيد الكلي</p>
-                            <h2 class="text-3xl font-bold" id="balanceAmount">7,250.00</h2>
+                            <h2 class="text-3xl font-bold" id="balanceAmount">0.00</h2>
                             <p class="text-xs opacity-70 mt-1" id="balanceEgp">ج.م</p>
                         </div>
                         <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
@@ -160,7 +410,7 @@
                     </div>
                 </div>
 
-                <!-- Market Rates Live Feed -->
+                <!-- Exchange Rates Live Feed -->
                 <div id="marketRatesCard" class="bg-cs-card border border-cs-border rounded-2xl p-4 mb-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-semibold text-white flex items-center gap-2">
@@ -170,8 +420,13 @@
                         <div id="botActivityIndicator" class="w-2 h-2 bg-cs-bot rounded-full bot-pulse"></div>
                     </div>
                     <div id="ratesContainer" class="space-y-2">
-                        <!-- Populated by JavaScript -->
+                        <div class="flex items-center justify-center py-8">
+                            <div class="loading-spinner"></div>
+                        </div>
                     </div>
+                    <p class="text-xs text-gray-500 mt-4 text-center">
+                        آخر تحديث: <span id="lastUpdateTime">جاري التحميل</span>
+                    </p>
                 </div>
 
                 <!-- Quick Actions -->
@@ -197,7 +452,7 @@
                     <div class="space-y-4">
                         <div>
                             <label class="text-xs text-gray-400 block mb-2">من</label>
-                            <select id="fromCurrency" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white">
+                            <select id="fromCurrency" class="input-field">
                                 <option value="EGP">EGP - الجنيه المصري</option>
                                 <option value="USD">USD - الدولار الأمريكي</option>
                                 <option value="EUR">EUR - اليورو</option>
@@ -208,11 +463,11 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-400 block mb-2">المبلغ</label>
-                            <input id="exchangeAmount" type="number" placeholder="أدخل المبلغ" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white placeholder-gray-600">
+                            <input id="exchangeAmount" type="number" placeholder="أدخل المبلغ" class="input-field">
                         </div>
                         <div>
                             <label class="text-xs text-gray-400 block mb-2">إلى</label>
-                            <select id="toCurrency" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white">
+                            <select id="toCurrency" class="input-field">
                                 <option value="USD">USD - الدولار الأمريكي</option>
                                 <option value="EGP">EGP - الجنيه المصري</option>
                                 <option value="EUR">EUR - اليورو</option>
@@ -232,31 +487,6 @@
                     </div>
                 </div>
 
-                <!-- NFC Scan Section -->
-                <div id="nfcSection" class="bg-cs-card border border-cs-border rounded-2xl p-6 mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-semibold text-white flex items-center gap-2">
-                            <i class="fas fa-mobile-alt text-cs-primary"></i>
-                            قارئ الـ NFC
-                        </h3>
-                        <span id="nfcStatus" class="text-xs bg-cs-surface px-2 py-1 rounded-full text-gray-400">جاهز</span>
-                    </div>
-                    <button id="nfcScanBtn" class="w-full bg-gradient-to-r from-cs-primary to-blue-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2">
-                        <i class="fas fa-radio"></i>
-                        ابدأ مسح NFC
-                    </button>
-                    <div id="nfcTimer" class="hidden mt-4 text-center">
-                        <div class="flex items-center justify-center gap-2 mb-2">
-                            <i class="fas fa-spinner fa-spin text-cs-primary"></i>
-                            <span class="text-sm text-gray-400">جاري البحث عن علامات NFC...</span>
-                        </div>
-                        <div class="w-full bg-cs-surface rounded-full h-2 overflow-hidden">
-                            <div id="nfcProgress" class="bg-cs-primary h-full w-full transition-all duration-300" style="width: 100%;"></div>
-                        </div>
-                        <p class="text-xs text-gray-400 mt-2"><span id="nfcCountdown">15</span>s</p>
-                    </div>
-                </div>
-
             </div>
         </main>
 
@@ -271,18 +501,18 @@
                     <i class="fas fa-history text-lg"></i>
                     <span class="text-xs">السجل</span>
                 </button>
-                <button class="tab-nav flex-1 h-full flex flex-col items-center justify-center gap-1 hover:bg-cs-surface transition tab-inactive" data-tab="bot">
-                    <i class="fas fa-robot text-lg"></i>
-                    <span class="text-xs">الروبوت</span>
+                <button class="tab-nav flex-1 h-full flex flex-col items-center justify-center gap-1 hover:bg-cs-surface transition tab-inactive" data-tab="analytics">
+                    <i class="fas fa-chart-bar text-lg"></i>
+                    <span class="text-xs">الإحصائيات</span>
                 </button>
-                <button class="tab-nav flex-1 h-full flex flex-col items-center justify-center gap-1 hover:bg-cs-surface transition tab-inactive" data-tab="admin">
-                    <i class="fas fa-crown text-lg"></i>
-                    <span class="text-xs">إدارة</span>
+                <button class="tab-nav flex-1 h-full flex flex-col items-center justify-center gap-1 hover:bg-cs-surface transition tab-inactive" data-tab="settings">
+                    <i class="fas fa-cog text-lg"></i>
+                    <span class="text-xs">الإعدادات</span>
                 </button>
             </div>
         </nav>
 
-        <!-- Tab Content Container -->
+        <!-- Tab Content -->
         <div id="tabContent" class="hidden fixed inset-0 bg-cs-dark overflow-y-auto scrollbar-hide z-30 max-w-md mx-auto">
             
             <!-- History Tab -->
@@ -293,169 +523,95 @@
                         <button class="filter-btn px-4 py-2 rounded-full bg-cs-primary text-white text-sm whitespace-nowrap transition" data-filter="all">الكل</button>
                         <button class="filter-btn px-4 py-2 rounded-full bg-cs-surface text-gray-300 text-sm whitespace-nowrap transition hover:bg-cs-border" data-filter="deposit">إيداع</button>
                         <button class="filter-btn px-4 py-2 rounded-full bg-cs-surface text-gray-300 text-sm whitespace-nowrap transition hover:bg-cs-border" data-filter="exchange">تحويل</button>
-                        <button class="filter-btn px-4 py-2 rounded-full bg-cs-surface text-gray-300 text-sm whitespace-nowrap transition hover:bg-cs-border" data-filter="bot">روبوت</button>
+                        <button class="filter-btn px-4 py-2 rounded-full bg-cs-surface text-gray-300 text-sm whitespace-nowrap transition hover:bg-cs-border" data-filter="withdraw">سحب</button>
                     </div>
                     <div id="transactionsList" class="space-y-3">
-                        <!-- Populated by JavaScript -->
+                        <p class="text-gray-400 text-center py-8">لا توجد معاملات بعد</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Bot Monitor Tab -->
-            <div id="botTab" class="tab-content hidden pt-16 pb-24">
+            <!-- Analytics Tab -->
+            <div id="analyticsTab" class="tab-content hidden pt-16 pb-24">
                 <div class="px-4 py-6">
-                    <h2 class="text-2xl font-bold text-white mb-6">لوحة مراقبة الروبوت</h2>
+                    <h2 class="text-2xl font-bold text-white mb-6">الإحصائيات والتقارير</h2>
                     
-                    <!-- Bot Status -->
-                    <div class="bg-gradient-bot rounded-2xl p-6 mb-6 text-white">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-bold">حالة نظام الروبوت</h3>
-                            <div id="botMainStatus" class="health-indicator health-good"></div>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-cs-card border border-cs-border rounded-2xl p-4">
+                            <p class="text-gray-400 text-sm">إجمالي المعاملات</p>
+                            <p class="text-2xl font-bold text-cs-primary mt-2" id="totalTransactions">0</p>
                         </div>
-                        <div class="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <p class="text-opacity-70 text-white">المعاملات المعالجة</p>
-                                <p class="text-2xl font-bold" id="botTransactionCount">0</p>
-                            </div>
-                            <div>
-                                <p class="text-opacity-70 text-white">الأرباح المكتسبة</p>
-                                <p class="text-2xl font-bold" id="botProfits">0 ج.م</p>
-                            </div>
+                        <div class="bg-cs-card border border-cs-border rounded-2xl p-4">
+                            <p class="text-gray-400 text-sm">الرسوم المدفوعة</p>
+                            <p class="text-2xl font-bold text-cs-warning mt-2" id="totalFees">0.00</p>
                         </div>
                     </div>
 
-                    <!-- Market Monitoring -->
-                    <div class="bg-cs-card border border-cs-border rounded-2xl p-6 mb-6">
-                        <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
-                            <i class="fas fa-chart-line text-cs-market"></i>
-                            مراقبة السوق
-                        </h3>
-                        <div id="botMarketLog" class="space-y-2 max-h-64 overflow-y-auto scrollbar-hide">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-
-                    <!-- Bot Decisions Log -->
-                    <div class="bg-cs-card border border-cs-border rounded-2xl p-6">
-                        <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
-                            <i class="fas fa-list text-cs-accent"></i>
-                            سجل القرارات الآلية
-                        </h3>
-                        <div id="botDecisionsLog" class="space-y-2 max-h-64 overflow-y-auto scrollbar-hide text-sm">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Admin Tab (Hidden until authenticated) -->
-            <div id="adminTab" class="tab-content hidden pt-16 pb-24">
-                <div class="px-4 py-6">
-                    <h2 class="text-2xl font-bold text-white mb-6">لوحة تحكم المسؤول</h2>
-                    
-                    <!-- Health Dashboard -->
-                    <div class="bg-cs-card border border-cs-border rounded-2xl p-6 mb-6">
-                        <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
-                            <i class="fas fa-heartbeat text-cs-success"></i>
-                            لوحة صحة النظام
-                        </h3>
+                    <div class="bg-cs-card border border-cs-border rounded-2xl p-4">
+                        <h3 class="font-semibold text-white mb-4">توزيع المعاملات</h3>
                         <div class="space-y-3">
                             <div class="flex justify-between items-center">
-                                <span class="text-gray-400">حالة التطبيق</span>
-                                <div class="flex items-center gap-2">
-                                    <div id="healthAppIndicator" class="health-indicator health-good"></div>
-                                    <span id="healthAppStatus" class="text-sm font-semibold text-cs-success">سليم</span>
-                                </div>
+                                <span class="text-gray-400">الإيداعات</span>
+                                <span class="text-cs-success font-bold" id="depositCount">0</span>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span class="text-gray-400">حالة الروبوت</span>
-                                <div class="flex items-center gap-2">
-                                    <div id="healthBotIndicator" class="health-indicator health-good"></div>
-                                    <span id="healthBotStatus" class="text-sm font-semibold text-cs-success">يعمل</span>
-                                </div>
+                                <span class="text-gray-400">التحويلات</span>
+                                <span class="text-cs-primary font-bold" id="exchangeCount">0</span>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span class="text-gray-400">النسخ الاحتياطي</span>
-                                <div class="flex items-center gap-2">
-                                    <div id="healthBackupIndicator" class="health-indicator health-good"></div>
-                                    <span id="healthBackupStatus" class="text-sm font-semibold text-cs-success">آخر 60 ثانية</span>
+                                <span class="text-gray-400">السحوبات</span>
+                                <span class="text-cs-warning font-bold" id="withdrawCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settingsTab" class="tab-content hidden pt-16 pb-24">
+                <div class="px-4 py-6">
+                    <h2 class="text-2xl font-bold text-white mb-6">الإعدادات</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-cs-card border border-cs-border rounded-2xl p-4">
+                            <h3 class="font-semibold text-white mb-3">معلومات الحساب</h3>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">الاسم:</span>
+                                    <span class="text-white" id="settingsName">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">البريد:</span>
+                                    <span class="text-white" id="settingsEmail">-</span>
                                 </div>
                             </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-400">ذاكرة الحالة</span>
-                                <span id="healthMemoryStatus" class="text-sm font-semibold text-cs-accent">صحيحة</span>
-                            </div>
                         </div>
-                    </div>
 
-                    <!-- Profit Margin Control -->
-                    <div class="bg-cs-card border border-cs-border rounded-2xl p-6 mb-6">
-                        <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
-                            <i class="fas fa-sliders-h text-cs-warning"></i>
-                            التحكم في هامش الربح
-                        </h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="text-xs text-gray-400 block mb-2">نسبة هامش الربح</label>
-                                <div class="flex items-center gap-4">
-                                    <input id="profitMarginSlider" type="range" min="0.5" max="10" step="0.1" value="2.5" class="flex-1">
-                                    <span id="profitMarginValue" class="text-lg font-bold text-cs-warning w-16 text-right">2.5%</span>
+                        <div class="bg-cs-card border border-cs-border rounded-2xl p-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <p class="font-semibold text-white">المصادقة الثنائية</p>
+                                    <p class="text-xs text-gray-400 mt-1">تفعيل الحماية الإضافية</p>
                                 </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input id="twoFaToggle" type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-cs-surface peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cs-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cs-primary"></div>
+                                </label>
                             </div>
-                            <button id="applyProfitMarginBtn" class="w-full bg-cs-warning text-black font-semibold py-2 rounded-lg hover:bg-opacity-90 transition">
-                                تطبيق التغييرات
+                        </div>
+
+                        <div class="bg-cs-card border border-cs-border rounded-2xl p-4">
+                            <button id="changePasswordBtn" class="w-full text-left font-semibold text-white hover:text-cs-primary transition flex items-center gap-2">
+                                <i class="fas fa-lock"></i>
+                                تغيير كلمة المرور
                             </button>
                         </div>
-                    </div>
 
-                    <!-- Fee Configuration -->
-                    <div class="bg-cs-card border border-cs-border rounded-2xl p-6 mb-6">
-                        <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
-                            <i class="fas fa-cog text-cs-primary"></i>
-                            إعدادات الرسوم
-                        </h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="text-xs text-gray-400 block mb-2">رسم التحويل الأساسي</label>
-                                <input id="feeTransfer" type="number" step="0.001" value="0.01" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-2 text-white">
-                            </div>
-                            <div>
-                                <label class="text-xs text-gray-400 block mb-2">رسم السحب الأساسي</label>
-                                <input id="feeWithdraw" type="number" step="0.001" value="0.02" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-2 text-white">
-                            </div>
-                            <button id="applyFeesBtn" class="w-full bg-cs-primary text-white font-semibold py-2 rounded-lg hover:opacity-90 transition">
-                                حفظ إعدادات الرسوم
+                        <div class="bg-cs-card border border-cs-border rounded-2xl p-4">
+                            <button id="logoutBtnSettings" class="w-full text-left font-semibold text-cs-danger hover:text-red-400 transition flex items-center gap-2">
+                                <i class="fas fa-sign-out-alt"></i>
+                                تسجيل الخروج
                             </button>
-                        </div>
-                    </div>
-
-                    <!-- System Actions -->
-                    <div class="bg-cs-card border border-cs-border rounded-2xl p-6 mb-6">
-                        <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
-                            <i class="fas fa-tools text-cs-accent"></i>
-                            إجراءات النظام
-                        </h3>
-                        <div class="space-y-2">
-                            <button id="forceHealthCheckBtn" class="w-full bg-cs-surface text-gray-300 font-semibold py-2 rounded-lg hover:bg-cs-border transition text-sm">
-                                فحص صحة فوري
-                            </button>
-                            <button id="forceBackupBtn" class="w-full bg-cs-surface text-gray-300 font-semibold py-2 rounded-lg hover:bg-cs-border transition text-sm">
-                                نسخ احتياطي فوري
-                            </button>
-                            <button id="resetToSafeBtn" class="w-full bg-cs-danger text-white font-semibold py-2 rounded-lg hover:opacity-90 transition text-sm">
-                                إعادة تعيين آمنة
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Error Log -->
-                    <div class="bg-cs-card border border-cs-border rounded-2xl p-6">
-                        <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
-                            <i class="fas fa-exclamation-triangle text-cs-danger"></i>
-                            سجل الأخطاء
-                        </h3>
-                        <div id="errorLogContainer" class="space-y-2 max-h-48 overflow-y-auto scrollbar-hide text-xs">
-                            <p class="text-gray-500 text-center py-4">لا توجد أخطاء</p>
                         </div>
                     </div>
                 </div>
@@ -476,18 +632,18 @@
             <div class="space-y-4 mb-6">
                 <div>
                     <label class="text-sm text-gray-400 block mb-2">المبلغ (ج.م)</label>
-                    <input id="depositAmount" type="number" placeholder="أدخل المبلغ" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white placeholder-gray-600">
+                    <input id="depositAmount" type="number" placeholder="أدخل المبلغ" class="input-field" min="1">
                 </div>
                 <div>
                     <label class="text-sm text-gray-400 block mb-2">طريقة الإيداع</label>
-                    <select id="depositMethod" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white">
+                    <select id="depositMethod" class="input-field">
                         <option value="card">بطاقة ائتمان</option>
                         <option value="bank">تحويل بنكي</option>
                         <option value="wallet">محفظة رقمية</option>
                     </select>
                 </div>
             </div>
-            <button id="confirmDepositBtn" class="w-full gradient-success text-white font-semibold py-3 rounded-lg hover:shadow-lg transition active:scale-95 mb-3">
+            <button id="confirmDepositBtn" class="w-full btn-primary py-3 mb-3">
                 تأكيد الإيداع
             </button>
             <button id="depositModalClose2" class="w-full bg-cs-surface text-gray-300 font-semibold py-3 rounded-lg hover:bg-cs-border transition">
@@ -508,18 +664,18 @@
             <div class="space-y-4 mb-6">
                 <div>
                     <label class="text-sm text-gray-400 block mb-2">المبلغ (ج.م)</label>
-                    <input id="withdrawAmount" type="number" placeholder="أدخل المبلغ" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white placeholder-gray-600">
-                    <p class="text-xs text-gray-500 mt-2">الرصيد المتاح: <span id="availableBalance">7,250.00</span> ج.م</p>
+                    <input id="withdrawAmount" type="number" placeholder="أدخل المبلغ" class="input-field" min="1">
+                    <p class="text-xs text-gray-500 mt-2">الرصيد المتاح: <span id="availableBalance">0.00</span> ج.م</p>
                 </div>
                 <div>
                     <label class="text-sm text-gray-400 block mb-2">طريقة السحب</label>
-                    <select id="withdrawMethod" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white">
+                    <select id="withdrawMethod" class="input-field">
                         <option value="bank">تحويل بنكي</option>
                         <option value="wallet">محفظة رقمية</option>
                     </select>
                 </div>
             </div>
-            <button id="confirmWithdrawBtn" class="w-full bg-cs-warning text-black font-semibold py-3 rounded-lg hover:bg-opacity-90 transition active:scale-95 mb-3">
+            <button id="confirmWithdrawBtn" class="w-full bg-cs-warning text-black font-semibold py-3 rounded-lg hover:bg-opacity-90 transition mb-3">
                 تأكيد السحب
             </button>
             <button id="withdrawModalClose2" class="w-full bg-cs-surface text-gray-300 font-semibold py-3 rounded-lg hover:bg-cs-border transition">
@@ -530,13 +686,13 @@
 
     <!-- Success Modal -->
     <div id="successModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center max-w-md mx-auto">
-        <div class="bg-cs-card rounded-2xl p-8 text-center border border-cs-border animate-fade-in">
+        <div class="bg-cs-card rounded-2xl p-8 text-center border border-cs-border animate-fade-in-up">
             <div class="w-16 h-16 gradient-success rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fas fa-check text-white text-2xl"></i>
             </div>
             <h3 class="text-xl font-bold text-white mb-2" id="successTitle">تم بنجاح!</h3>
             <p class="text-gray-400 text-sm mb-6" id="successMessage">تمت العملية بنجاح</p>
-            <button id="successBtn" class="w-full gradient-success text-white font-semibold py-3 rounded-lg transition active:scale-95">
+            <button id="successBtn" class="w-full btn-primary py-3">
                 حسناً
             </button>
         </div>
@@ -544,13 +700,13 @@
 
     <!-- Error Modal -->
     <div id="errorModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center max-w-md mx-auto">
-        <div class="bg-cs-card rounded-2xl p-8 text-center border border-cs-border animate-fade-in">
+        <div class="bg-cs-card rounded-2xl p-8 text-center border border-cs-border animate-fade-in-up">
             <div class="w-16 h-16 bg-cs-danger bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fas fa-exclamation text-cs-danger text-2xl"></i>
             </div>
             <h3 class="text-xl font-bold text-white mb-2" id="errorTitle">حدث خطأ!</h3>
             <p class="text-gray-400 text-sm mb-6" id="errorMessage">حدث خطأ في العملية</p>
-            <button id="errorBtn" class="w-full bg-cs-danger text-white font-semibold py-3 rounded-lg transition active:scale-95">
+            <button id="errorBtn" class="w-full btn-primary py-3">
                 حسناً
             </button>
         </div>
@@ -558,550 +714,298 @@
 
     <script>
         // =====================================================================
-        // CORE AUTONOMOUS SYSTEM ENGINE - ZERO MANUAL INTERVENTION
+        // PRODUCTION-GRADE CASHSWAP PRO - LIVE RATES & SECURE AUTHENTICATION
         // =====================================================================
 
-        // ============ GLOBAL STATE MANAGER ============
-        const StateManager = {
-            STORAGE_KEY: 'cashswap_state',
-            BACKUP_KEY: 'cashswap_backups',
-            HEALTH_KEY: 'cashswap_health',
-            ADMIN_KEY: 'cashswap_admin',
-            ERROR_LOG_KEY: 'cashswap_errors',
+        // ============ CONFIGURATION ============
+        const CONFIG = {
+            API_BASE: 'https://api.exchangerate-api.com/v4/latest/',
+            BASE_CURRENCY: 'EGP',
+            SUPPORTED_CURRENCIES: ['EGP', 'USD', 'EUR', 'SAR', 'GBP', 'AED'],
+            RATE_UPDATE_INTERVAL: 30000, // 30 seconds
+            SESSION_TIMEOUT: 30 * 60 * 1000, // 30 minutes
+            MIN_PASSWORD_LENGTH: 8,
+        };
 
-            defaultState: {
-                balance: 7250.00,
-                currency: 'EGP',
-                transactions: [
-                    { id: 1, type: 'deposit', amount: 500, fromCurrency: 'EGP', toCurrency: 'EGP', status: 'completed', date: '2024-01-15', source: 'manual' },
-                    { id: 2, type: 'exchange', amount: 250, fromCurrency: 'EGP', toCurrency: 'USD', status: 'completed', date: '2024-01-14', source: 'manual' },
-                ],
-                exchangeRates: {
-                    'EGP': 1.0,
-                    'USD': 30.5,
-                    'EUR': 33.2,
-                    'SAR': 8.13,
-                    'GBP': 38.4,
-                    'AED': 8.31
-                },
-                profitMargin: 2.5,
-                fees: { transfer: 0.01, withdraw: 0.02, deposit: 0 },
-                adminAuth: false,
-                botEnabled: true,
-                botStats: { transactionsProcessed: 0, totalProfits: 0 },
+        // ============ STATE MANAGER ============
+        const StateManager = {
+            STORAGE_KEY: 'cashswap_user_data',
+            AUTH_KEY: 'cashswap_auth_token',
+            RATES_KEY: 'cashswap_rates',
+            RATES_TIMESTAMP_KEY: 'cashswap_rates_timestamp',
+
+            getAuthToken() {
+                return localStorage.getItem(this.AUTH_KEY);
             },
 
-            getState() {
+            setAuthToken(token) {
+                localStorage.setItem(this.AUTH_KEY, token);
+            },
+
+            removeAuthToken() {
+                localStorage.removeItem(this.AUTH_KEY);
+            },
+
+            isAuthenticated() {
+                return !!this.getAuthToken();
+            },
+
+            getUserData() {
                 try {
-                    const stored = localStorage.getItem(this.STORAGE_KEY);
-                    return stored ? JSON.parse(stored) : { ...this.defaultState };
+                    const data = localStorage.getItem(this.STORAGE_KEY);
+                    return data ? JSON.parse(data) : null;
                 } catch (e) {
-                    this.logError('STATE_LOAD_FAIL', e);
-                    return { ...this.defaultState };
+                    console.error('Error loading user data:', e);
+                    return null;
                 }
             },
 
-            setState(newState) {
+            setUserData(data) {
                 try {
-                    this.backup();
-                    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newState));
+                    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
                     return true;
                 } catch (e) {
-                    this.logError('STATE_SAVE_FAIL', e);
+                    console.error('Error saving user data:', e);
                     return false;
                 }
             },
 
-            backup() {
+            clearUserData() {
+                localStorage.removeItem(this.STORAGE_KEY);
+                localStorage.removeItem(this.AUTH_KEY);
+            },
+
+            getRates() {
                 try {
-                    const current = localStorage.getItem(this.STORAGE_KEY);
-                    let backups = JSON.parse(localStorage.getItem(this.BACKUP_KEY) || '[]');
-                    backups.push({ state: current, timestamp: Date.now() });
-                    backups = backups.slice(-3);
-                    localStorage.setItem(this.BACKUP_KEY, JSON.stringify(backups));
+                    const data = localStorage.getItem(this.RATES_KEY);
+                    return data ? JSON.parse(data) : null;
                 } catch (e) {
-                    this.logError('BACKUP_FAIL', e);
+                    return null;
                 }
             },
 
-            restore() {
+            setRates(rates) {
                 try {
-                    const backups = JSON.parse(localStorage.getItem(this.BACKUP_KEY) || '[]');
-                    if (backups.length > 0) {
-                        const lastBackup = backups[backups.length - 1];
-                        localStorage.setItem(this.STORAGE_KEY, lastBackup.state);
-                        return true;
-                    }
-                    return false;
+                    localStorage.setItem(this.RATES_KEY, JSON.stringify(rates));
+                    localStorage.setItem(this.RATES_TIMESTAMP_KEY, Date.now().toString());
+                    return true;
                 } catch (e) {
-                    this.logError('RESTORE_FAIL', e);
+                    console.error('Error saving rates:', e);
                     return false;
                 }
             },
 
-            logError(type, error) {
-                try {
-                    let logs = JSON.parse(localStorage.getItem(this.ERROR_LOG_KEY) || '[]');
-                    logs.push({
-                        type,
-                        message: error.toString(),
-                        timestamp: new Date().toISOString(),
-                        stack: error.stack
-                    });
-                    logs = logs.slice(-20);
-                    localStorage.setItem(this.ERROR_LOG_KEY, JSON.stringify(logs));
-                } catch (e) {
-                    console.error('Cannot log error:', e);
-                }
-            },
-
-            getErrors() {
-                try {
-                    return JSON.parse(localStorage.getItem(this.ERROR_LOG_KEY) || '[]');
-                } catch (e) {
-                    return [];
-                }
-            },
-
-            isAdmin() {
-                return localStorage.getItem(this.ADMIN_KEY) === 'true';
-            },
-
-            setAdmin(authenticated) {
-                localStorage.setItem(this.ADMIN_KEY, authenticated ? 'true' : 'false');
+            getRatesTimestamp() {
+                const timestamp = localStorage.getItem(this.RATES_TIMESTAMP_KEY);
+                return timestamp ? parseInt(timestamp) : 0;
             }
         };
 
-        // ============ HEALTH MONITORING CORE ============
-        const HealthMonitor = {
-            checks: {
-                stateIntegrity: true,
-                balanceValid: true,
-                botRunning: true,
-                backupRecent: true
+        // ============ VALIDATION SYSTEM ============
+        const Validator = {
+            email(email) {
+                const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return regex.test(email);
             },
-            errorCount: 0,
-            MAX_ERRORS: 5,
-            lastHealthCheck: Date.now(),
-            healthCheckInterval: 5000,
-            backupInterval: 60000,
-            lastBackupTime: Date.now(),
 
-            validate() {
-                const state = StateManager.getState();
+            password(password) {
+                return password.length >= CONFIG.MIN_PASSWORD_LENGTH;
+            },
+
+            passwordMatch(password, confirm) {
+                return password === confirm;
+            },
+
+            phone(phone) {
+                return phone.length >= 10;
+            },
+
+            name(name) {
+                return name.trim().length >= 3;
+            },
+
+            amount(amount) {
+                const num = parseFloat(amount);
+                return num > 0 && !isNaN(num);
+            }
+        };
+
+        // ============ EXCHANGE RATE ENGINE ============
+        const RateEngine = {
+            rates: {},
+            loading: false,
+            lastUpdate: 0,
+
+            async fetchRates() {
+                if (this.loading) return;
                 
-                // Check state integrity
-                if (typeof state.balance !== 'number' || state.balance < 0) {
-                    this.checks.stateIntegrity = false;
-                    StateManager.logError('BALANCE_INVALID', new Error(`Invalid balance: ${state.balance}`));
-                    if (StateManager.restore()) {
-                        location.reload();
-                    }
-                } else {
-                    this.checks.stateIntegrity = true;
+                // Check if cached rates are still valid (less than 30 minutes old)
+                const cachedRates = StateManager.getRates();
+                const timestamp = StateManager.getRatesTimestamp();
+                if (cachedRates && Date.now() - timestamp < CONFIG.RATE_UPDATE_INTERVAL) {
+                    this.rates = cachedRates;
+                    return cachedRates;
                 }
 
-                // Check transactions array
-                if (!Array.isArray(state.transactions)) {
-                    this.checks.stateIntegrity = false;
-                    state.transactions = [];
-                    StateManager.setState(state);
+                this.loading = true;
+                try {
+                    const response = await fetch(`${CONFIG.API_BASE}${CONFIG.BASE_CURRENCY}`);
+                    if (!response.ok) throw new Error('API request failed');
+                    
+                    const data = await response.json();
+                    this.rates = data.rates;
+                    this.rates[CONFIG.BASE_CURRENCY] = 1.0; // Ensure base currency is always 1
+                    
+                    StateManager.setRates(this.rates);
+                    this.lastUpdate = Date.now();
+                    
+                    console.log('✅ Live rates fetched successfully', this.rates);
+                    return this.rates;
+                } catch (error) {
+                    console.error('Error fetching rates:', error);
+                    // Fall back to cached rates or demo rates
+                    const fallback = cachedRates || this.getDemoRates();
+                    this.rates = fallback;
+                    return fallback;
+                } finally {
+                    this.loading = false;
                 }
-
-                // Check exchange rates
-                if (!state.exchangeRates || typeof state.exchangeRates !== 'object') {
-                    state.exchangeRates = StateManager.defaultState.exchangeRates;
-                    StateManager.setState(state);
-                }
-
-                // Backup check
-                if (Date.now() - this.lastBackupTime > this.backupInterval) {
-                    StateManager.backup();
-                    this.lastBackupTime = Date.now();
-                    this.checks.backupRecent = true;
-                } else {
-                    this.checks.backupRecent = true;
-                }
-
-                return this.getStatus();
             },
 
-            getStatus() {
-                const allHealthy = Object.values(this.checks).every(c => c === true);
+            getDemoRates() {
                 return {
-                    healthy: allHealthy,
-                    checks: this.checks,
-                    errorCount: this.errorCount
+                    'EGP': 1.0,
+                    'USD': 30.9,
+                    'EUR': 33.8,
+                    'SAR': 8.24,
+                    'GBP': 38.9,
+                    'AED': 8.41
                 };
-            },
-
-            start() {
-                setInterval(() => {
-                    this.validate();
-                    this.updateUI();
-                }, this.healthCheckInterval);
-            },
-
-            updateUI() {
-                const status = this.getStatus();
-                const indicator = status.healthy ? 'health-good' : status.errorCount > 3 ? 'health-error' : 'health-warning';
-                const appStatus = document.getElementById('healthAppStatus');
-                const appIndicator = document.getElementById('healthAppIndicator');
-                
-                if (appStatus) appStatus.textContent = status.healthy ? 'سليم' : 'تحذير';
-                if (appIndicator) {
-                    appIndicator.className = `health-indicator ${indicator}`;
-                }
-            }
-        };
-
-        // ============ CURRENCY EXCHANGE ENGINE ============
-        const CurrencyEngine = {
-            baseRates: {
-                'EGP': 1.0,
-                'USD': 30.5,
-                'EUR': 33.2,
-                'SAR': 8.13,
-                'GBP': 38.4,
-                'AED': 8.31
-            },
-
-            volatilityFactors: {
-                'USD': { min: -0.5, max: 0.5 },
-                'EUR': { min: -0.6, max: 0.6 },
-                'SAR': { min: -0.3, max: 0.3 },
-                'GBP': { min: -0.7, max: 0.7 },
-                'AED': { min: -0.2, max: 0.2 }
             },
 
             getRate(from, to) {
-                const state = StateManager.getState();
-                const fromRate = state.exchangeRates[from] || this.baseRates[from] || 1;
-                const toRate = state.exchangeRates[to] || this.baseRates[to] || 1;
-                return toRate / fromRate;
+                if (!this.rates[from] || !this.rates[to]) return 1;
+                return this.rates[to] / this.rates[from];
             },
 
             convert(amount, from, to) {
-                const rate = this.getRate(from, to);
-                return amount * rate;
-            },
-
-            simulateMarketMovement() {
-                const state = StateManager.getState();
-                const currencies = ['USD', 'EUR', 'SAR', 'GBP', 'AED'];
-
-                currencies.forEach(curr => {
-                    const volatility = this.volatilityFactors[curr];
-                    const change = (Math.random() * (volatility.max - volatility.min)) + volatility.min;
-                    const changePercent = change / 100;
-                    state.exchangeRates[curr] = Math.max(
-                        state.exchangeRates[curr] * (1 + changePercent),
-                        this.baseRates[curr] * 0.8
-                    );
-                });
-
-                StateManager.setState(state);
-                return state.exchangeRates;
+                return amount * this.getRate(from, to);
             }
         };
 
-        // ============ AUTONOMOUS MARKET BOT ============
-        const MarketBot = {
-            enabled: true,
-            processInterval: 8000,
-            marketCheckInterval: 3000,
-            lastUpdate: Date.now(),
-            decisions: [],
-            maxDecisions: 50,
-            marketEvents: [],
-            maxEvents: 100,
+        // ============ AUTHENTICATION SYSTEM ============
+        const AuthSystem = {
+            // Demo users for testing
+            demoUsers: [
+                { email: 'demo@cashswap.com', password: 'Demo@123', name: 'مستخدم تجريبي', phone: '+201234567890' },
+                { email: 'user@cashswap.com', password: 'User@123', name: 'أحمد محمد', phone: '+201112345678' }
+            ],
 
-            start() {
-                if (!this.enabled) return;
-
-                // Market monitoring loop
-                setInterval(() => {
-                    this.monitorMarket();
-                }, this.marketCheckInterval);
-
-                // Transaction processing loop
-                setInterval(() => {
-                    this.processAutonomousTransactions();
-                }, this.processInterval);
-
-                console.log('🤖 MarketBot initialized and running');
-            },
-
-            monitorMarket() {
-                const rates = CurrencyEngine.simulateMarketMovement();
-                const state = StateManager.getState();
-
-                // Detect significant movements
-                Object.keys(rates).forEach(curr => {
-                    const change = ((rates[curr] - CurrencyEngine.baseRates[curr]) / CurrencyEngine.baseRates[curr]) * 100;
-                    
-                    if (Math.abs(change) > 0.5) {
-                        const event = {
-                            timestamp: new Date().toLocaleTimeString('ar-EG'),
-                            currency: curr,
-                            rate: rates[curr].toFixed(4),
-                            change: change.toFixed(2),
-                            direction: change > 0 ? 'up' : 'down'
-                        };
-
-                        this.marketEvents.push(event);
-                        this.marketEvents = this.marketEvents.slice(-this.maxEvents);
-                        
-                        console.log(`📊 Market Event: ${curr} ${change > 0 ? '📈' : '📉'} ${Math.abs(change).toFixed(2)}%`);
-                    }
-                });
-
-                StateManager.setState(state);
-                this.updateMarketUI();
-            },
-
-            processAutonomousTransactions() {
-                const state = StateManager.getState();
+            registerUser(userData) {
+                const users = JSON.parse(localStorage.getItem('cashswap_users') || '[]');
                 
-                // Simulate bot making decisions
-                const decision = {
-                    timestamp: new Date().toLocaleTimeString('ar-EG'),
-                    type: 'monitoring',
-                    status: 'نشط',
-                    details: `فحص السوق: ${Object.keys(state.exchangeRates).length} عملات`
-                };
-
-                this.decisions.push(decision);
-                this.decisions = this.decisions.slice(-this.maxDecisions);
-
-                // Every 5th iteration, simulate a small optimization
-                if (this.decisions.length % 5 === 0) {
-                    state.botStats.transactionsProcessed++;
-                    state.botStats.totalProfits += (Math.random() * 50);
-                    StateManager.setState(state);
+                // Check if user exists
+                if (users.some(u => u.email === userData.email)) {
+                    return { success: false, message: 'البريد الإلكتروني مسجل بالفعل' };
                 }
 
-                this.updateBotUI();
+                // Add user
+                users.push({
+                    ...userData,
+                    createdAt: new Date().toISOString(),
+                    balance: 5000 // Initial balance
+                });
+
+                localStorage.setItem('cashswap_users', JSON.stringify(users));
+                return { success: true, message: 'تم إنشاء الحساب بنجاح' };
             },
 
-            updateMarketUI() {
-                const container = document.getElementById('botMarketLog');
-                if (!container) return;
+            loginUser(email, password) {
+                const users = JSON.parse(localStorage.getItem('cashswap_users') || '[]');
+                
+                // Check demo users
+                const allUsers = [...users, ...this.demoUsers];
+                const user = allUsers.find(u => u.email === email && u.password === password);
 
-                container.innerHTML = this.marketEvents.slice(-10).reverse().map(event => `
-                    <div class="bg-cs-surface border-l-4 border-cs-market rounded px-3 py-2">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="font-semibold text-white">${event.currency}</p>
-                                <p class="text-xs text-gray-400">${event.timestamp}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-mono text-white">${event.rate}</p>
-                                <p class="text-xs ${event.direction === 'up' ? 'text-cs-success' : 'text-cs-danger'}">
-                                    ${event.direction === 'up' ? '📈' : '📉'} ${event.change}%
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
+                if (!user) {
+                    return { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
+                }
+
+                // Create session token
+                const token = btoa(JSON.stringify({ email, timestamp: Date.now() }));
+                StateManager.setAuthToken(token);
+
+                // Initialize user session
+                const userData = {
+                    email: user.email,
+                    name: user.name,
+                    phone: user.phone,
+                    balance: user.balance || 5000,
+                    transactions: user.transactions || [],
+                    loginTime: Date.now()
+                };
+
+                StateManager.setUserData(userData);
+                return { success: true, user: userData };
             },
 
-            updateBotUI() {
-                const container = document.getElementById('botDecisionsLog');
-                if (!container) return;
-
-                container.innerHTML = this.decisions.slice(-15).reverse().map(dec => `
-                    <div class="bg-cs-surface rounded px-3 py-2 flex items-center gap-2">
-                        <div class="w-2 h-2 bg-cs-bot rounded-full"></div>
-                        <div class="flex-1">
-                            <p class="text-sm text-gray-300">${dec.details}</p>
-                            <p class="text-xs text-gray-500">${dec.timestamp}</p>
-                        </div>
-                    </div>
-                `).join('');
-
-                const state = StateManager.getState();
-                const countEl = document.getElementById('botTransactionCount');
-                const profitsEl = document.getElementById('botProfits');
-                if (countEl) countEl.textContent = state.botStats.transactionsProcessed;
-                if (profitsEl) profitsEl.textContent = state.botStats.totalProfits.toFixed(2) + ' ج.م';
+            logout() {
+                StateManager.clearUserData();
             }
         };
 
-        // ============ NFC HANDLER ============
-        class NFCHandler {
-            constructor() {
-                this.timeout = 15000;
-                this.scanTimer = null;
-                this.timeRemaining = 15;
+        // ============ UI MANAGERS ============
+        const UIManager = {
+            showAuth(form) {
+                document.getElementById('loginForm').classList.toggle('hidden', form !== 'login');
+                document.getElementById('signupForm').classList.toggle('hidden', form !== 'signup');
+            },
+
+            showApp() {
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('appContainer').classList.remove('hidden');
+            },
+
+            showAuthContainer() {
+                document.getElementById('appContainer').classList.add('hidden');
+                document.getElementById('authContainer').classList.remove('hidden');
+                UIManager.showAuth('login');
+            },
+
+            showModal(modalId) {
+                document.getElementById(modalId).classList.remove('hidden');
+            },
+
+            hideModal(modalId) {
+                document.getElementById(modalId).classList.add('hidden');
+            },
+
+            showSuccess(title, message) {
+                document.getElementById('successTitle').textContent = title;
+                document.getElementById('successMessage').textContent = message;
+                this.showModal('successModal');
+            },
+
+            showError(message) {
+                document.getElementById('errorMessage').textContent = message;
+                this.showModal('errorModal');
             }
+        };
 
-            async startScan() {
-                const scanBtn = document.getElementById('nfcScanBtn');
-                const timer = document.getElementById('nfcTimer');
-                const status = document.getElementById('nfcStatus');
-
-                scanBtn.style.display = 'none';
-                timer.classList.remove('hidden');
-                status.textContent = 'جاري البحث...';
-                this.timeRemaining = 15;
-
-                this.scanTimer = setInterval(() => {
-                    this.timeRemaining--;
-                    document.getElementById('nfcCountdown').textContent = this.timeRemaining;
-                    const progressWidth = (this.timeRemaining / 15) * 100;
-                    document.getElementById('nfcProgress').style.width = progressWidth + '%';
-
-                    if (this.timeRemaining <= 0) {
-                        this.stopScan();
-                    }
-                }, 1000);
-
-                setTimeout(() => this.stopScan(), 2500);
-            }
-
-            stopScan() {
-                clearInterval(this.scanTimer);
-                const scanBtn = document.getElementById('nfcScanBtn');
-                const timer = document.getElementById('nfcTimer');
-                const status = document.getElementById('nfcStatus');
-
-                scanBtn.style.display = 'flex';
-                timer.classList.add('hidden');
-                status.textContent = 'جاهز';
-            }
-        }
-
-        const nfcHandler = new NFCHandler();
-
-        // ============ FEE CALCULATOR ============
-        class FeeCalculator {
-            calculate(amount, type) {
-                const state = StateManager.getState();
-                const baseRate = state.fees[type] || 0.01;
-                const margin = state.profitMargin / 100;
-                const fee = amount * baseRate * (1 + margin);
-                const total = amount + fee;
-                return { fee: Math.max(fee, 0), total };
-            }
-        }
-
-        const feeCalculator = new FeeCalculator();
-
-        // ============ TRANSACTION PROCESSOR ============
-        class TransactionProcessor {
-            processExchange(amount, fromCurrency, toCurrency) {
-                const state = StateManager.getState();
-                
-                // Calculate fee
-                const { fee } = feeCalculator.calculate(amount, 'transfer');
-                const netAmount = amount - fee;
-                
-                // Convert
-                const converted = CurrencyEngine.convert(netAmount, fromCurrency, toCurrency);
-                
-                // Record transaction
-                const transaction = {
-                    id: state.transactions.length + 1,
-                    type: 'exchange',
-                    amount: converted,
-                    fromCurrency: fromCurrency,
-                    toCurrency: toCurrency,
-                    fee: fee,
-                    status: 'completed',
-                    date: new Date().toISOString().split('T')[0],
-                    source: 'manual'
-                };
-
-                state.transactions.push(transaction);
-                StateManager.setState(state);
-                return { converted, fee, transaction };
-            }
-
-            processDeposit(amount) {
-                const state = StateManager.getState();
-                state.balance += amount;
-                
-                const transaction = {
-                    id: state.transactions.length + 1,
-                    type: 'deposit',
-                    amount: amount,
-                    fromCurrency: 'EGP',
-                    toCurrency: 'EGP',
-                    status: 'completed',
-                    date: new Date().toISOString().split('T')[0],
-                    source: 'manual'
-                };
-
-                state.transactions.push(transaction);
-                StateManager.setState(state);
-                return transaction;
-            }
-
-            processWithdraw(amount) {
-                const state = StateManager.getState();
-                if (amount > state.balance) return null;
-                
-                const { fee } = feeCalculator.calculate(amount, 'withdraw');
-                state.balance -= (amount + fee);
-                
-                const transaction = {
-                    id: state.transactions.length + 1,
-                    type: 'withdraw',
-                    amount: amount,
-                    fee: fee,
-                    fromCurrency: 'EGP',
-                    toCurrency: 'EGP',
-                    status: 'pending',
-                    date: new Date().toISOString().split('T')[0],
-                    source: 'manual'
-                };
-
-                state.transactions.push(transaction);
-                StateManager.setState(state);
-                return transaction;
-            }
-        }
-
-        const transactionProcessor = new TransactionProcessor();
-
-        // ============ UI UTILITIES ============
+        // ============ FORMAT UTILITIES ============
         function formatCurrency(amount) {
             return amount.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        function showModal(modalId) {
-            document.getElementById(modalId).classList.remove('hidden');
+        function formatTime(date) {
+            return new Date(date).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
         }
 
-        function hideModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-        }
-
-        function showSuccess(title, message) {
-            document.getElementById('successTitle').textContent = title;
-            document.getElementById('successMessage').textContent = message;
-            showModal('successModal');
-        }
-
-        function showError(message) {
-            document.getElementById('errorMessage').textContent = message;
-            showModal('errorModal');
-        }
-
-        function updateBalanceDisplay() {
-            const state = StateManager.getState();
-            document.getElementById('balanceAmount').textContent = formatCurrency(state.balance);
-            document.getElementById('balanceEgp').textContent = 'ج.م';
-            document.getElementById('balanceUsd').textContent = formatCurrency(CurrencyEngine.convert(state.balance, 'EGP', 'USD'));
-            document.getElementById('balanceEur').textContent = formatCurrency(CurrencyEngine.convert(state.balance, 'EGP', 'EUR'));
-            document.getElementById('balanceSar').textContent = formatCurrency(CurrencyEngine.convert(state.balance, 'EGP', 'SAR'));
-            document.getElementById('availableBalance').textContent = formatCurrency(state.balance);
-        }
-
-        function updateRatesDisplay() {
-            const state = StateManager.getState();
+        // ============ RATE DISPLAY ============
+        async function updateRatesDisplay() {
             const container = document.getElementById('ratesContainer');
+            if (!container) return;
+
             const pairs = [
                 { from: 'USD', to: 'EGP' },
                 { from: 'EUR', to: 'EGP' },
@@ -1110,14 +1014,14 @@
             ];
 
             container.innerHTML = pairs.map(pair => {
-                const rate = CurrencyEngine.getRate(pair.from, pair.to);
-                const prevRate = CurrencyEngine.baseRates[pair.from] / CurrencyEngine.baseRates[pair.to];
-                const change = ((rate - prevRate) / prevRate) * 100;
+                const rate = RateEngine.getRate(pair.from, pair.to);
+                const demoRate = RateEngine.getDemoRates()[pair.from] / RateEngine.getDemoRates()[pair.to];
+                const change = ((rate - demoRate) / demoRate) * 100;
                 const direction = change >= 0 ? 'up' : 'down';
                 const className = change >= 0 ? 'currency-up' : 'currency-down';
 
                 return `
-                    <div class="flex items-center justify-between p-3 bg-cs-surface rounded-lg">
+                    <div class="flex items-center justify-between p-3 bg-cs-surface rounded-lg rate-card">
                         <div>
                             <p class="font-semibold text-white">${pair.from}/${pair.to}</p>
                             <p class="text-xs text-gray-400">السعر الحالي</p>
@@ -1131,16 +1035,389 @@
                     </div>
                 `;
             }).join('');
+
+            // Update timestamp
+            const now = new Date();
+            document.getElementById('lastUpdateTime').textContent = `${formatTime(now)}`;
+        }
+
+        // ============ BALANCE DISPLAY ============
+        function updateBalanceDisplay() {
+            const userData = StateManager.getUserData();
+            if (!userData) return;
+
+            const balance = userData.balance || 0;
+            document.getElementById('balanceAmount').textContent = formatCurrency(balance);
+            document.getElementById('balanceUsd').textContent = formatCurrency(RateEngine.convert(balance, 'EGP', 'USD'));
+            document.getElementById('balanceEur').textContent = formatCurrency(RateEngine.convert(balance, 'EGP', 'EUR'));
+            document.getElementById('balanceSar').textContent = formatCurrency(RateEngine.convert(balance, 'EGP', 'SAR'));
+            document.getElementById('availableBalance').textContent = formatCurrency(balance);
+            document.getElementById('userWelcome').textContent = `مرحباً، ${userData.name}`;
+        }
+
+        // ============ AUTHENTICATION HANDLERS ============
+
+        // Login form
+        document.getElementById('loginFormElement').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const loginBtn = document.getElementById('loginBtn');
+
+            // Clear previous errors
+            document.getElementById('emailError').textContent = '';
+            document.getElementById('passwordError').textContent = '';
+
+            // Validation
+            if (!Validator.email(email)) {
+                document.getElementById('emailError').textContent = 'البريد الإلكتروني غير صحيح';
+                return;
+            }
+
+            if (!password) {
+                document.getElementById('passwordError').textContent = 'أدخل كلمة المرور';
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i>جاري المعالجة...';
+
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const result = AuthSystem.loginUser(email, password);
+
+            if (result.success) {
+                loginBtn.innerHTML = '<i class="fas fa-check ml-2"></i>تم الدخول';
+                setTimeout(() => {
+                    UIManager.showApp();
+                    initializeApp();
+                }, 500);
+            } else {
+                document.getElementById('passwordError').textContent = result.message;
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt ml-2"></i>دخول الحساب';
+            }
+        });
+
+        // Signup form
+        document.getElementById('signupFormElement').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const phone = document.getElementById('signupPhone').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirm = document.getElementById('signupConfirm').value;
+            const agreeTerms = document.getElementById('agreeTerms').checked;
+            const signupBtn = document.getElementById('signupBtn');
+
+            // Clear previous errors
+            document.querySelectorAll('.validation-error').forEach(el => el.textContent = '');
+
+            // Validation
+            let valid = true;
+
+            if (!Validator.name(name)) {
+                document.getElementById('nameError').textContent = 'أدخل اسماً صحيحاً (3 أحرف على الأقل)';
+                valid = false;
+            }
+
+            if (!Validator.email(email)) {
+                document.getElementById('signupEmailError').textContent = 'البريد الإلكتروني غير صحيح';
+                valid = false;
+            }
+
+            if (!Validator.phone(phone)) {
+                document.getElementById('phoneError').textContent = 'رقم الهاتف غير صحيح';
+                valid = false;
+            }
+
+            if (!Validator.password(password)) {
+                document.getElementById('signupPasswordError').textContent = `كلمة المرور يجب أن تكون ${CONFIG.MIN_PASSWORD_LENGTH} أحرف على الأقل`;
+                valid = false;
+            }
+
+            if (!Validator.passwordMatch(password, confirm)) {
+                document.getElementById('confirmError').textContent = 'كلمات المرور غير متطابقة';
+                valid = false;
+            }
+
+            if (!agreeTerms) {
+                document.getElementById('confirmError').textContent = 'يجب الموافقة على الشروط والأحكام';
+                valid = false;
+            }
+
+            if (!valid) return;
+
+            signupBtn.disabled = true;
+            signupBtn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i>جاري الإنشاء...';
+
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const result = AuthSystem.registerUser({ name, email, phone, password });
+
+            if (result.success) {
+                signupBtn.innerHTML = '<i class="fas fa-check ml-2"></i>تم الإنشاء';
+                setTimeout(() => {
+                    UIManager.showAuth('login');
+                    document.getElementById('loginEmail').value = email;
+                    document.getElementById('loginPassword').value = password;
+                    UIManager.showSuccess('تم الإنشاء بنجاح', 'يمكنك الآن تسجيل الدخول');
+                }, 500);
+            } else {
+                document.getElementById('signupEmailError').textContent = result.message;
+                signupBtn.disabled = false;
+                signupBtn.innerHTML = '<i class="fas fa-user-plus ml-2"></i>إنشاء الحساب';
+            }
+        });
+
+        // Demo login
+        document.getElementById('demoLoginBtn').addEventListener('click', async () => {
+            const btn = event.target.closest('button');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i>جاري الدخول...';
+
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const result = AuthSystem.loginUser('demo@cashswap.com', 'Demo@123');
+            if (result.success) {
+                btn.innerHTML = '<i class="fas fa-check ml-2"></i>تم الدخول';
+                setTimeout(() => {
+                    UIManager.showApp();
+                    initializeApp();
+                }, 500);
+            }
+        });
+
+        // Form switches
+        document.getElementById('switchToSignupBtn').addEventListener('click', () => UIManager.showAuth('signup'));
+        document.getElementById('switchToLoginBtn').addEventListener('click', () => UIManager.showAuth('login'));
+
+        // Password visibility toggle
+        document.getElementById('togglePassword').addEventListener('click', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('loginPassword');
+            const icon = e.currentTarget.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        // ============ APP INITIALIZATION ============
+        async function initializeApp() {
+            console.log('🚀 Initializing CashSwap Pro...');
+
+            // Fetch live rates
+            await RateEngine.fetchRates();
+            updateRatesDisplay();
+            updateBalanceDisplay();
+
+            // Update rates every 30 seconds
+            setInterval(async () => {
+                await RateEngine.fetchRates();
+                updateRatesDisplay();
+            }, CONFIG.RATE_UPDATE_INTERVAL);
+
+            // Setup event listeners
+            setupEventListeners();
+
+            console.log('✅ App ready');
+        }
+
+        function setupEventListeners() {
+            // Tabs
+            document.querySelectorAll('.tab-nav').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.dataset.tab;
+                    
+                    document.querySelectorAll('.tab-nav').forEach(b => {
+                        b.classList.remove('tab-active');
+                        b.classList.add('tab-inactive');
+                    });
+                    btn.classList.add('tab-active');
+                    btn.classList.remove('tab-inactive');
+
+                    if (tab === 'home') {
+                        document.getElementById('tabContent').classList.add('hidden');
+                    } else {
+                        document.getElementById('tabContent').classList.remove('hidden');
+                        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+                        const tabEl = document.getElementById(tab + 'Tab');
+                        if (tabEl) {
+                            tabEl.classList.remove('hidden');
+                            if (tab === 'analytics') updateAnalytics();
+                            if (tab === 'settings') updateSettings();
+                        }
+                    }
+                });
+            });
+
+            // Filters
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => {
+                        b.classList.remove('bg-cs-primary', 'text-white');
+                        b.classList.add('bg-cs-surface', 'text-gray-300');
+                    });
+                    btn.classList.remove('bg-cs-surface', 'text-gray-300');
+                    btn.classList.add('bg-cs-primary', 'text-white');
+                    updateTransactionsList(btn.dataset.filter);
+                });
+            });
+
+            // Deposit
+            document.getElementById('depositBtn').addEventListener('click', () => UIManager.showModal('depositModal'));
+            document.getElementById('depositModalClose').addEventListener('click', () => UIManager.hideModal('depositModal'));
+            document.getElementById('depositModalClose2').addEventListener('click', () => UIManager.hideModal('depositModal'));
+
+            document.getElementById('confirmDepositBtn').addEventListener('click', () => {
+                const amount = parseFloat(document.getElementById('depositAmount').value);
+                if (!Validator.amount(amount)) {
+                    UIManager.showError('أدخل مبلغاً صحيحاً');
+                    return;
+                }
+
+                const userData = StateManager.getUserData();
+                userData.balance = (userData.balance || 0) + amount;
+                userData.transactions = userData.transactions || [];
+                userData.transactions.push({
+                    id: Date.now(),
+                    type: 'deposit',
+                    amount: amount,
+                    status: 'completed',
+                    date: new Date().toISOString(),
+                    method: document.getElementById('depositMethod').value
+                });
+
+                StateManager.setUserData(userData);
+                UIManager.hideModal('depositModal');
+                document.getElementById('depositAmount').value = '';
+                updateBalanceDisplay();
+                updateTransactionsList('all');
+                UIManager.showSuccess('تم الإيداع بنجاح', `تمت إضافة ${formatCurrency(amount)} ج.م`);
+            });
+
+            // Withdraw
+            document.getElementById('withdrawBtn').addEventListener('click', () => UIManager.showModal('withdrawModal'));
+            document.getElementById('withdrawModalClose').addEventListener('click', () => UIManager.hideModal('withdrawModal'));
+            document.getElementById('withdrawModalClose2').addEventListener('click', () => UIManager.hideModal('withdrawModal'));
+
+            document.getElementById('confirmWithdrawBtn').addEventListener('click', () => {
+                const amount = parseFloat(document.getElementById('withdrawAmount').value);
+                const userData = StateManager.getUserData();
+
+                if (!Validator.amount(amount)) {
+                    UIManager.showError('أدخل مبلغاً صحيحاً');
+                    return;
+                }
+
+                if (amount > (userData.balance || 0)) {
+                    UIManager.showError('الرصيد غير كافي');
+                    return;
+                }
+
+                userData.balance = (userData.balance || 0) - amount;
+                userData.transactions = userData.transactions || [];
+                userData.transactions.push({
+                    id: Date.now(),
+                    type: 'withdraw',
+                    amount: amount,
+                    status: 'pending',
+                    date: new Date().toISOString(),
+                    method: document.getElementById('withdrawMethod').value
+                });
+
+                StateManager.setUserData(userData);
+                UIManager.hideModal('withdrawModal');
+                document.getElementById('withdrawAmount').value = '';
+                updateBalanceDisplay();
+                updateTransactionsList('all');
+                UIManager.showSuccess('تم تقديم طلب السحب', 'سيتم معالجة الطلب خلال 24 ساعة');
+            });
+
+            // Exchange
+            document.getElementById('executeExchangeBtn').addEventListener('click', () => {
+                const amount = parseFloat(document.getElementById('exchangeAmount').value);
+                const fromCurrency = document.getElementById('fromCurrency').value;
+                const toCurrency = document.getElementById('toCurrency').value;
+                const userData = StateManager.getUserData();
+
+                if (!Validator.amount(amount)) {
+                    UIManager.showError('أدخل مبلغاً صحيحاً');
+                    return;
+                }
+
+                if (fromCurrency === toCurrency) {
+                    UIManager.showError('يجب اختيار عملات مختلفة');
+                    return;
+                }
+
+                if (fromCurrency === 'EGP' && amount > (userData.balance || 0)) {
+                    UIManager.showError('الرصيد غير كافي');
+                    return;
+                }
+
+                const converted = RateEngine.convert(amount, fromCurrency, toCurrency);
+                const rate = RateEngine.getRate(fromCurrency, toCurrency);
+
+                document.getElementById('exchangeRateDisplay').textContent = rate.toFixed(4);
+                document.getElementById('exchangeResultAmount').textContent = formatCurrency(converted);
+                document.getElementById('exchangeResult').classList.remove('hidden');
+
+                // Log transaction if from EGP
+                if (fromCurrency === 'EGP') {
+                    userData.balance = (userData.balance || 0) - amount;
+                    userData.transactions = userData.transactions || [];
+                    userData.transactions.push({
+                        id: Date.now(),
+                        type: 'exchange',
+                        amount: amount,
+                        fromCurrency: fromCurrency,
+                        toCurrency: toCurrency,
+                        converted: converted,
+                        status: 'completed',
+                        date: new Date().toISOString()
+                    });
+
+                    StateManager.setUserData(userData);
+                    updateBalanceDisplay();
+                    updateTransactionsList('all');
+                }
+
+                UIManager.showSuccess('تم التحويل بنجاح', `${formatCurrency(converted)} ${toCurrency}`);
+            });
+
+            // Modals
+            document.getElementById('successBtn').addEventListener('click', () => UIManager.hideModal('successModal'));
+            document.getElementById('errorBtn').addEventListener('click', () => UIManager.hideModal('errorModal'));
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('logoutBtnSettings').addEventListener('click', logout);
         }
 
         function updateTransactionsList(filter = 'all') {
-            const state = StateManager.getState();
+            const userData = StateManager.getUserData();
+            const transactions = userData.transactions || [];
             const list = document.getElementById('transactionsList');
-            if (!list) return;
 
             const filtered = filter === 'all' 
-                ? state.transactions 
-                : state.transactions.filter(t => t.type === filter);
+                ? transactions 
+                : transactions.filter(t => t.type === filter);
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-center py-8">لا توجد معاملات</p>';
+                return;
+            }
 
             list.innerHTML = filtered.slice().reverse().map(t => {
                 const icons = { deposit: 'fa-arrow-down', exchange: 'fa-exchange-alt', withdraw: 'fa-arrow-up' };
@@ -1148,7 +1425,7 @@
                 const statusText = t.status === 'completed' ? 'مكتمل' : 'قيد المعالجة';
 
                 return `
-                    <div class="transaction-item bg-cs-surface border border-cs-border rounded-lg p-4 ${statusClass}">
+                    <div class="bg-cs-surface border border-cs-border rounded-lg p-4 transaction-item ${statusClass}">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full flex items-center justify-center bg-cs-primary bg-opacity-20">
@@ -1156,11 +1433,11 @@
                                 </div>
                                 <div>
                                     <p class="font-semibold text-white capitalize">${t.type === 'deposit' ? 'إيداع' : t.type === 'exchange' ? 'تحويل' : 'سحب'}</p>
-                                    <p class="text-xs text-gray-400">${t.fromCurrency}${t.toCurrency && t.toCurrency !== t.fromCurrency ? ' → ' + t.toCurrency : ''}</p>
+                                    <p class="text-xs text-gray-400">${new Date(t.date).toLocaleDateString('ar-EG')}</p>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <p class="font-bold text-white">${formatCurrency(t.amount)} ${t.toCurrency || 'ج.م'}</p>
+                                <p class="font-bold text-white">${formatCurrency(t.amount)}</p>
                                 <p class="text-xs text-gray-400">${statusText}</p>
                             </div>
                         </div>
@@ -1169,248 +1446,49 @@
             }).join('');
         }
 
-        // ============ ADMIN AUTHENTICATION ============
-        let adminTaps = 0;
-        let adminTapTimer = null;
+        function updateAnalytics() {
+            const userData = StateManager.getUserData();
+            const transactions = userData.transactions || [];
 
-        document.getElementById('headerTapZone').addEventListener('click', function() {
-            adminTaps++;
-            
-            clearTimeout(adminTapTimer);
-            adminTapTimer = setTimeout(() => {
-                adminTaps = 0;
-            }, 500);
+            const stats = {
+                total: transactions.length,
+                deposit: transactions.filter(t => t.type === 'deposit').length,
+                exchange: transactions.filter(t => t.type === 'exchange').length,
+                withdraw: transactions.filter(t => t.type === 'withdraw').length,
+                totalFees: transactions
+                    .filter(t => t.fee)
+                    .reduce((sum, t) => sum + t.fee, 0)
+            };
 
-            if (adminTaps === 3) {
-                const pin = prompt('أدخل رقم PIN المسؤول (الافتراضي: 9999):');
-                if (pin === '9999') {
-                    StateManager.setAdmin(true);
-                    showSuccess('تم التحقق ✓', 'تم تفعيل لوحة المسؤول');
-                    document.querySelectorAll('.tab-nav').forEach((btn, idx) => {
-                        if (idx === 3) {
-                            btn.style.opacity = '1';
-                            btn.style.pointerEvents = 'auto';
-                        }
-                    });
-                } else {
-                    showError('رقم PIN غير صحيح');
-                }
-                adminTaps = 0;
+            document.getElementById('totalTransactions').textContent = stats.total;
+            document.getElementById('totalFees').textContent = formatCurrency(stats.totalFees);
+            document.getElementById('depositCount').textContent = stats.deposit;
+            document.getElementById('exchangeCount').textContent = stats.exchange;
+            document.getElementById('withdrawCount').textContent = stats.withdraw;
+        }
+
+        function updateSettings() {
+            const userData = StateManager.getUserData();
+            document.getElementById('settingsName').textContent = userData.name;
+            document.getElementById('settingsEmail').textContent = userData.email;
+        }
+
+        function logout() {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                AuthSystem.logout();
+                UIManager.showAuthContainer();
             }
-        });
+        }
 
-        // ============ EVENT LISTENERS ============
-
-        // Tabs
-        document.querySelectorAll('.tab-nav').forEach((btn, idx) => {
-            if (idx === 3 && !StateManager.isAdmin()) {
-                btn.style.opacity = '0.5';
-                btn.style.pointerEvents = 'none';
+        // ============ STARTUP ============
+        window.addEventListener('load', async () => {
+            // Check if user is already authenticated
+            if (StateManager.isAuthenticated()) {
+                UIManager.showApp();
+                await initializeApp();
+            } else {
+                UIManager.showAuth('login');
             }
-
-            btn.addEventListener('click', () => {
-                const tab = btn.dataset.tab;
-                
-                if (tab === 'admin' && !StateManager.isAdmin()) {
-                    showError('يجب تفعيل لوحة المسؤول أولاً');
-                    return;
-                }
-
-                document.querySelectorAll('.tab-nav').forEach(b => {
-                    b.classList.remove('tab-active');
-                    b.classList.add('tab-inactive');
-                });
-                btn.classList.add('tab-active');
-                btn.classList.remove('tab-inactive');
-
-                if (tab === 'home') {
-                    document.getElementById('tabContent').classList.add('hidden');
-                } else {
-                    document.getElementById('tabContent').classList.remove('hidden');
-                    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-                    const tabEl = document.getElementById(tab + 'Tab');
-                    if (tabEl) tabEl.classList.remove('hidden');
-                    
-                    if (tab === 'history') {
-                        updateTransactionsList('all');
-                    }
-                }
-            });
-        });
-
-        // Filter transactions
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.filter-btn').forEach(b => {
-                    b.classList.remove('bg-cs-primary', 'text-white');
-                    b.classList.add('bg-cs-surface', 'text-gray-300');
-                });
-                btn.classList.remove('bg-cs-surface', 'text-gray-300');
-                btn.classList.add('bg-cs-primary', 'text-white');
-                updateTransactionsList(btn.dataset.filter);
-            });
-        });
-
-        // Currency Exchange
-        document.getElementById('executeExchangeBtn').addEventListener('click', () => {
-            const amount = parseFloat(document.getElementById('exchangeAmount').value);
-            const fromCurrency = document.getElementById('fromCurrency').value;
-            const toCurrency = document.getElementById('toCurrency').value;
-
-            if (!amount || amount <= 0) {
-                showError('أدخل مبلغاً صحيحاً');
-                return;
-            }
-
-            if (amount > StateManager.getState().balance) {
-                showError('الرصيد غير كافي');
-                return;
-            }
-
-            const result = transactionProcessor.processExchange(amount, fromCurrency, toCurrency);
-            document.getElementById('exchangeAmount').value = '';
-            
-            const rate = CurrencyEngine.getRate(fromCurrency, toCurrency);
-            document.getElementById('exchangeRateDisplay').textContent = rate.toFixed(4);
-            document.getElementById('exchangeResultAmount').textContent = formatCurrency(result.converted);
-            document.getElementById('exchangeResult').classList.remove('hidden');
-            
-            updateBalanceDisplay();
-            updateTransactionsList('all');
-            showSuccess('تم التحويل بنجاح', `${formatCurrency(result.converted)} ${toCurrency}`);
-        });
-
-        // Deposit
-        document.getElementById('depositBtn').addEventListener('click', () => showModal('depositModal'));
-        document.getElementById('depositModalClose').addEventListener('click', () => hideModal('depositModal'));
-        document.getElementById('depositModalClose2').addEventListener('click', () => hideModal('depositModal'));
-
-        document.getElementById('confirmDepositBtn').addEventListener('click', () => {
-            const amount = parseFloat(document.getElementById('depositAmount').value);
-            if (!amount || amount <= 0) {
-                showError('أدخل مبلغاً صحيحاً');
-                return;
-            }
-            hideModal('depositModal');
-            transactionProcessor.processDeposit(amount);
-            document.getElementById('depositAmount').value = '';
-            updateBalanceDisplay();
-            updateTransactionsList('all');
-            showSuccess('تم الإيداع بنجاح', `تمت إضافة ${formatCurrency(amount)} ج.م`);
-        });
-
-        // Withdraw
-        document.getElementById('withdrawBtn').addEventListener('click', () => showModal('withdrawModal'));
-        document.getElementById('withdrawModalClose').addEventListener('click', () => hideModal('withdrawModal'));
-        document.getElementById('withdrawModalClose2').addEventListener('click', () => hideModal('withdrawModal'));
-
-        document.getElementById('confirmWithdrawBtn').addEventListener('click', () => {
-            const amount = parseFloat(document.getElementById('withdrawAmount').value);
-            if (!amount || amount <= 0) {
-                showError('أدخل مبلغاً صحيحاً');
-                return;
-            }
-
-            const result = transactionProcessor.processWithdraw(amount);
-            if (!result) {
-                showError('الرصيد غير كافي');
-                return;
-            }
-
-            hideModal('withdrawModal');
-            document.getElementById('withdrawAmount').value = '';
-            updateBalanceDisplay();
-            updateTransactionsList('all');
-            showSuccess('تم تقديم طلب السحب', 'سيتم المعالجة قريباً');
-        });
-
-        // Modals
-        document.getElementById('successBtn').addEventListener('click', () => hideModal('successModal'));
-        document.getElementById('errorBtn').addEventListener('click', () => hideModal('errorModal'));
-
-        // NFC
-        document.getElementById('nfcScanBtn').addEventListener('click', () => nfcHandler.startScan());
-
-        // Admin Controls
-        document.getElementById('profitMarginSlider').addEventListener('input', (e) => {
-            document.getElementById('profitMarginValue').textContent = e.target.value + '%';
-        });
-
-        document.getElementById('applyProfitMarginBtn').addEventListener('click', () => {
-            const state = StateManager.getState();
-            state.profitMargin = parseFloat(document.getElementById('profitMarginSlider').value);
-            StateManager.setState(state);
-            showSuccess('تم التحديث', `هامش الربح: ${state.profitMargin}%`);
-        });
-
-        document.getElementById('applyFeesBtn').addEventListener('click', () => {
-            const state = StateManager.getState();
-            state.fees.transfer = parseFloat(document.getElementById('feeTransfer').value);
-            state.fees.withdraw = parseFloat(document.getElementById('feeWithdraw').value);
-            StateManager.setState(state);
-            showSuccess('تم التحديث', 'تم حفظ إعدادات الرسوم');
-        });
-
-        document.getElementById('forceHealthCheckBtn').addEventListener('click', () => {
-            HealthMonitor.validate();
-            showSuccess('فحص صحي مكتمل', 'جميع الأنظمة تعمل بشكل طبيعي');
-        });
-
-        document.getElementById('forceBackupBtn').addEventListener('click', () => {
-            StateManager.backup();
-            showSuccess('نسخة احتياطية', 'تم إنشاء نسخة احتياطية بنجاح');
-        });
-
-        document.getElementById('resetToSafeBtn').addEventListener('click', () => {
-            if (confirm('هل أنت متأكد من إعادة التعيين؟')) {
-                StateManager.backup();
-                const defaultState = { ...StateManager.defaultState };
-                StateManager.setState(defaultState);
-                location.reload();
-            }
-        });
-
-        // Error log display
-        setInterval(() => {
-            const errors = StateManager.getErrors();
-            const container = document.getElementById('errorLogContainer');
-            if (container) {
-                if (errors.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-4">لا توجد أخطاء</p>';
-                } else {
-                    container.innerHTML = errors.slice(-10).reverse().map(err => `
-                        <div class="bg-cs-surface rounded px-2 py-1 border-l-2 border-cs-danger">
-                            <p class="text-xs font-mono text-gray-300">${err.type}</p>
-                            <p class="text-xs text-gray-500">${err.timestamp}</p>
-                        </div>
-                    `).join('');
-                }
-            }
-        }, 5000);
-
-        // ============ INITIALIZATION ============
-        window.addEventListener('load', () => {
-            console.log('🚀 CashSwap Pro initialization...');
-            
-            updateBalanceDisplay();
-            updateRatesDisplay();
-            updateTransactionsList('all');
-            
-            HealthMonitor.start();
-            MarketBot.start();
-
-            // Periodic updates
-            setInterval(() => {
-                updateRatesDisplay();
-                updateBalanceDisplay();
-            }, 2000);
-
-            // Make MarketBot data accessible
-            window.CASHSWAP_HEALTH = HealthMonitor.getStatus;
-            window.CASHSWAP_BOT = MarketBot;
-            window.CASHSWAP_STATE = StateManager.getState;
-
-            console.log('✅ System ready. Access admin panel with 3x tap on header + PIN 9999');
         });
     </script>
 </body>
