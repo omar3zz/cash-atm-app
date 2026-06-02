@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <script>
@@ -33,4 +32,865 @@
                     },
                     animation: {
                         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'fade-in': 'fadeIn 0.4s ease-
+                        'fade-in': 'fadeIn 0.4s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'nfc-scan': 'nfcScan 1.5s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+                        nfcScan: { '0%, 100%': { boxShadow: '0 0 0 0 rgba(0, 102, 255, 0.7)' }, '50%': { boxShadow: '0 0 0 10px rgba(0, 102, 255, 0)' } },
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; width: 100%; }
+        body { font-family: 'Cairo', sans-serif; background: #0a0e17; color: #e0e0e0; }
+        
+        .gradient-primary {
+            background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
+        }
+        
+        .gradient-success {
+            background: linear-gradient(135deg, #00c853 0%, #00a844 100%);
+        }
+        
+        .nfc-pulse {
+            animation: nfcScan 1.5s ease-in-out infinite;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .tab-active { border-bottom: 3px solid #0066ff; color: #0066ff; }
+        .tab-inactive { border-bottom: 3px solid transparent; color: #888; }
+        
+        .modal-overlay { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); }
+        
+        input:focus { outline: none; border-color: #0066ff; }
+        input::placeholder { color: #666; }
+        
+        .btn-disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .transaction-item { border-left: 4px solid #0066ff; }
+        .transaction-item.success { border-left-color: #00c853; }
+        .transaction-item.pending { border-left-color: #ffab00; }
+        
+        @media (max-width: 480px) {
+            .text-lg { font-size: 1rem; }
+            .text-2xl { font-size: 1.25rem; }
+        }
+    </style>
+</head>
+<body class="bg-cs-dark">
+    <div id="app" class="flex flex-col h-screen bg-cs-dark">
+        
+        <!-- Header -->
+        <header class="bg-cs-card border-b border-cs-border sticky top-0 z-40 shadow-lg">
+            <div class="max-w-md mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center">
+                            <i class="fas fa-exchange-alt text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-bold text-white">CashSwap</h1>
+                            <p class="text-xs text-gray-400">منصة الكاش الفوري</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button id="notifBtn" class="relative p-2 hover:bg-cs-surface rounded-lg transition">
+                            <i class="fas fa-bell text-cs-primary text-lg"></i>
+                            <span class="absolute top-1 right-1 w-2 h-2 bg-cs-danger rounded-full"></span>
+                        </button>
+                        <button id="profileBtn" class="p-2 hover:bg-cs-surface rounded-lg transition">
+                            <i class="fas fa-user-circle text-cs-primary text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto scrollbar-hide">
+            <div class="max-w-md mx-auto px-4 py-6 pb-24">
+
+                <!-- Balance Card -->
+                <div id="balanceCard" class="gradient-primary rounded-2xl p-6 mb-6 shadow-xl text-white transform transition hover:scale-105">
+                    <div class="flex justify-between items-start mb-8">
+                        <div>
+                            <p class="text-sm opacity-90 mb-2">رصيدك الحالي</p>
+                            <h2 class="text-3xl font-bold" id="balanceAmount">7,250.00 ج.م</h2>
+                        </div>
+                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-wallet text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <div>
+                            <p class="opacity-70">رقم الحساب</p>
+                            <p class="font-mono" id="accountNumber">1234567890</p>
+                        </div>
+                        <div class="text-left">
+                            <p class="opacity-70">الحالة</p>
+                            <p class="text-cs-accent font-semibold">نشط</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <button id="depositBtn" class="bg-cs-card border border-cs-border rounded-2xl p-4 text-center hover:bg-cs-surface transition transform hover:scale-105 active:scale-95">
+                        <div class="text-2xl text-cs-success mb-2"><i class="fas fa-arrow-down"></i></div>
+                        <p class="font-semibold">إيداع</p>
+                        <p class="text-xs text-gray-400 mt-1">أضف أموال</p>
+                    </button>
+                    <button id="withdrawBtn" class="bg-cs-card border border-cs-border rounded-2xl p-4 text-center hover:bg-cs-surface transition transform hover:scale-105 active:scale-95">
+                        <div class="text-2xl text-cs-warning mb-2"><i class="fas fa-arrow-up"></i></div>
+                        <p class="font-semibold">سحب</p>
+                        <p class="text-xs text-gray-400 mt-1">اسحب أموال</p>
+                    </button>
+                </div>
+
+                <!-- NFC Scan Section -->
+                <div id="nfcSection" class="bg-cs-card border border-cs-border rounded-2xl p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-white flex items-center gap-2">
+                            <i class="fas fa-mobile-alt text-cs-primary"></i>
+                            قارئ الـ NFC
+                        </h3>
+                        <span id="nfcStatus" class="text-xs bg-cs-surface px-2 py-1 rounded-full text-gray-400">جاهز</span>
+                    </div>
+                    <button id="nfcScanBtn" class="w-full bg-gradient-to-r from-cs-primary to-blue-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2">
+                        <i class="fas fa-radio"></i>
+                        ابدأ مسح NFC
+                    </button>
+                    <div id="nfcTimer" class="hidden mt-4 text-center">
+                        <div class="flex items-center justify-center gap-2 mb-2">
+                            <i class="fas fa-spinner fa-spin text-cs-primary"></i>
+                            <span class="text-sm text-gray-400">جاري البحث عن علامات NFC...</span>
+                        </div>
+                        <div class="w-full bg-cs-surface rounded-full h-2 overflow-hidden">
+                            <div id="nfcProgress" class="bg-cs-primary h-full w-full transition-all duration-300" style="width: 100%;"></div>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2"><span id="nfcCountdown">15</span>s</p>
+                    </div>
+                    <div id="nfcResult" class="hidden mt-4 p-4 rounded-lg bg-cs-surface border border-cs-border">
+                        <p class="text-sm text-gray-300" id="nfcResultText"></p>
+                    </div>
+                </div>
+
+                <!-- Fee Calculator -->
+                <div id="feeSection" class="bg-cs-card border border-cs-border rounded-2xl p-6 mb-6">
+                    <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
+                        <i class="fas fa-calculator text-cs-accent"></i>
+                        حاسبة الرسوم
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-2">المبلغ (ج.م)</label>
+                            <input id="feeAmount" type="number" placeholder="أدخل المبلغ" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white placeholder-gray-600">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-2">نوع المعاملة</label>
+                                <select id="feeType" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white">
+                                    <option value="transfer">تحويل</option>
+                                    <option value="deposit">إيداع</option>
+                                    <option value="withdraw">سحب</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-2">السرعة</label>
+                                <select id="feeSpeed" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white">
+                                    <option value="normal">عادي</option>
+                                    <option value="fast">سريع</option>
+                                    <option value="instant">فوري</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button id="calculateFeeBtn" class="w-full bg-cs-accent text-black font-semibold py-3 rounded-lg hover:bg-opacity-90 transition active:scale-95">
+                            احسب الرسوم
+                        </button>
+                        <div id="feeResult" class="hidden bg-cs-surface border border-cs-border rounded-lg p-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-gray-400">المبلغ الأساسي:</span>
+                                <span class="text-white font-semibold" id="feeBase">0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-gray-400">الرسوم:</span>
+                                <span class="text-cs-warning font-semibold" id="feeAmount">0.00</span>
+                            </div>
+                            <div class="border-t border-cs-border pt-3 flex justify-between items-center">
+                                <span class="text-gray-300 font-semibold">الإجمالي:</span>
+                                <span class="text-cs-success font-bold text-lg" id="feeTotal">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Tabs Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-cs-card border-t border-cs-border shadow-2xl max-w-md mx-auto">
+            <div class="flex justify-around items-center h-20">
+                <button class="tab-nav flex-1 h-full flex flex-col items-center justify-center gap-1 hover:bg-cs-surface transition active tab-inactive" data-tab="home">
+                    <i class="fas fa-home text-lg"></i>
+                    <span class="text-xs">الرئيسية</span>
+                </button>
+                <button class="tab-nav flex-1 h-full flex flex-col items-center justify-center gap-1 hover:bg-cs-surface transition tab-inactive" data-tab="history">
+                    <i class="fas fa-history text-lg"></i>
+                    <span class="text-xs">السجل</span>
+                </button>
+                <button class="tab-nav flex-1 h-full flex flex-col items-center justify-center gap-1 hover:bg-cs-surface transition tab-inactive" data-tab="exchange">
+                    <i class="fas fa-arrows-alt-h text-lg"></i>
+                    <span class="text-xs">التحويل</span>
+                </button>
+                <button class="tab-nav flex-1 h-full flex flex-col items-center justify-center gap-1 hover:bg-cs-surface transition tab-inactive" data-tab="settings">
+                    <i class="fas fa-cog text-lg"></i>
+                    <span class="text-xs">الإعدادات</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Tab Content Container -->
+        <div id="tabContent" class="hidden fixed inset-0 bg-cs-dark overflow-y-auto scrollbar-hide z-30 max-w-md mx-auto">
+            
+            <!-- History Tab -->
+            <div id="historyTab" class="tab-content hidden pt-16 pb-24">
+                <div class="px-4 py-6">
+                    <h2 class="text-2xl font-bold text-white mb-6">سجل المعاملات</h2>
+                    
+                    <!-- Filter -->
+                    <div class="flex gap-2 mb-6 overflow-x-auto scrollbar-hide pb-2">
+                        <button class="filter-btn px-4 py-2 rounded-full bg-cs-primary text-white text-sm whitespace-nowrap transition" data-filter="all">الكل</button>
+                        <button class="filter-btn px-4 py-2 rounded-full bg-cs-surface text-gray-300 text-sm whitespace-nowrap transition hover:bg-cs-border" data-filter="deposit">إيداع</button>
+                        <button class="filter-btn px-4 py-2 rounded-full bg-cs-surface text-gray-300 text-sm whitespace-nowrap transition hover:bg-cs-border" data-filter="withdraw">سحب</button>
+                        <button class="filter-btn px-4 py-2 rounded-full bg-cs-surface text-gray-300 text-sm whitespace-nowrap transition hover:bg-cs-border" data-filter="transfer">تحويل</button>
+                    </div>
+
+                    <!-- Transactions List -->
+                    <div id="transactionsList" class="space-y-3">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exchange Tab -->
+            <div id="exchangeTab" class="tab-content hidden pt-16 pb-24">
+                <div class="px-4 py-6">
+                    <h2 class="text-2xl font-bold text-white mb-6">تحويل الأموال</h2>
+                    
+                    <div class="bg-cs-card border border-cs-border rounded-2xl p-6 space-y-4">
+                        <div>
+                            <label class="text-sm text-gray-400 block mb-2">رقم المحفظة المستقبلة</label>
+                            <input id="recipientWallet" type="text" placeholder="أدخل رقم المحفظة" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white placeholder-gray-600">
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-400 block mb-2">المبلغ (ج.م)</label>
+                            <input id="exchangeAmount" type="number" placeholder="المبلغ المراد تحويله" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white placeholder-gray-600">
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-400 block mb-2">ملاحظات (اختياري)</label>
+                            <textarea id="exchangeNote" placeholder="أضف ملاحظة..." class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white placeholder-gray-600 resize-none h-24"></textarea>
+                        </div>
+                        <button id="executeExchangeBtn" class="w-full gradient-success text-white font-semibold py-3 rounded-lg hover:shadow-lg transition active:scale-95">
+                            تنفيذ التحويل
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settingsTab" class="tab-content hidden pt-16 pb-24">
+                <div class="px-4 py-6">
+                    <h2 class="text-2xl font-bold text-white mb-6">الإعدادات</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-cs-card border border-cs-border rounded-2xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-semibold text-white">المصادقة الثنائية</p>
+                                    <p class="text-xs text-gray-400 mt-1">تفعيل الحماية الإضافية</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input id="twoFaToggle" type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-cs-surface peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cs-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cs-primary"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="bg-cs-card border border-cs-border rounded-2xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-semibold text-white">الإشعارات</p>
+                                    <p class="text-xs text-gray-400 mt-1">استقبال تحديثات الحساب</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input id="notifToggle" type="checkbox" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-cs-surface peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cs-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cs-primary"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="bg-cs-card border border-cs-border rounded-2xl p-4">
+                            <button class="w-full text-left font-semibold text-white hover:text-cs-primary transition flex items-center gap-2">
+                                <i class="fas fa-lock"></i>
+                                تغيير كلمة المرور
+                            </button>
+                        </div>
+
+                        <div class="bg-cs-card border border-cs-border rounded-2xl p-4">
+                            <button id="logoutBtn" class="w-full text-left font-semibold text-cs-danger hover:text-red-400 transition flex items-center gap-2">
+                                <i class="fas fa-sign-out-alt"></i>
+                                تسجيل الخروج
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Deposit Modal -->
+    <div id="depositModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-end max-w-md mx-auto">
+        <div class="bg-cs-card rounded-t-3xl w-full p-6 border-t border-cs-border animate-slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">إيداع أموال</h2>
+                <button id="depositModalClose" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="text-sm text-gray-400 block mb-2">المبلغ (ج.م)</label>
+                    <input id="depositAmount" type="number" placeholder="أدخل المبلغ" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white placeholder-gray-600">
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-400 block mb-2">طريقة الإيداع</label>
+                    <select id="depositMethod" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white">
+                        <option value="card">بطاقة ائتمان</option>
+                        <option value="bank">تحويل بنكي</option>
+                        <option value="wallet">محفظة رقمية</option>
+                        <option value="cash">دفع نقدي</option>
+                    </select>
+                </div>
+
+                <div id="depositDetails" class="bg-cs-surface border border-cs-border rounded-lg p-4">
+                    <p class="text-sm text-gray-300 mb-2">بيانات الإيداع:</p>
+                    <div id="depositInfo" class="text-xs text-gray-400 space-y-1">
+                        <!-- Populated based on selected method -->
+                    </div>
+                </div>
+            </div>
+
+            <button id="confirmDepositBtn" class="w-full gradient-success text-white font-semibold py-3 rounded-lg hover:shadow-lg transition active:scale-95 mb-3">
+                تأكيد الإيداع
+            </button>
+            <button id="depositModalClose2" class="w-full bg-cs-surface text-gray-300 font-semibold py-3 rounded-lg hover:bg-cs-border transition">
+                إلغاء
+            </button>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdrawModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-end max-w-md mx-auto">
+        <div class="bg-cs-card rounded-t-3xl w-full p-6 border-t border-cs-border animate-slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">سحب أموال</h2>
+                <button id="withdrawModalClose" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="text-sm text-gray-400 block mb-2">المبلغ (ج.م)</label>
+                    <input id="withdrawAmount" type="number" placeholder="أدخل المبلغ" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white placeholder-gray-600">
+                    <p class="text-xs text-gray-500 mt-2">الرصيد المتاح: <span id="availableBalance">7,250.00</span> ج.م</p>
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-400 block mb-2">طريقة السحب</label>
+                    <select id="withdrawMethod" class="w-full bg-cs-surface border border-cs-border rounded-lg px-4 py-3 text-white">
+                        <option value="bank">تحويل بنكي</option>
+                        <option value="wallet">محفظة رقمية</option>
+                        <option value="cash">سحب نقدي</option>
+                    </select>
+                </div>
+
+                <div id="withdrawDetails" class="bg-cs-surface border border-cs-border rounded-lg p-4">
+                    <p class="text-sm text-gray-300 mb-2">بيانات السحب:</p>
+                    <div id="withdrawInfo" class="text-xs text-gray-400 space-y-1">
+                        <!-- Populated based on selected method -->
+                    </div>
+                </div>
+
+                <div class="bg-cs-surface border border-cs-border rounded-lg p-4">
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="text-gray-400">رسوم السحب:</span>
+                        <span class="text-cs-warning font-semibold" id="withdrawFee">15.00 ج.م</span>
+                    </div>
+                    <div class="flex justify-between text-sm border-t border-cs-border pt-2">
+                        <span class="text-gray-300 font-semibold">المبلغ الصافي:</span>
+                        <span class="text-cs-success font-bold" id="withdrawNet">0.00 ج.م</span>
+                    </div>
+                </div>
+            </div>
+
+            <button id="confirmWithdrawBtn" class="w-full bg-cs-warning text-black font-semibold py-3 rounded-lg hover:bg-opacity-90 transition active:scale-95 mb-3">
+                تأكيد السحب
+            </button>
+            <button id="withdrawModalClose2" class="w-full bg-cs-surface text-gray-300 font-semibold py-3 rounded-lg hover:bg-cs-border transition">
+                إلغاء
+            </button>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center max-w-md mx-auto">
+        <div class="bg-cs-card rounded-2xl p-8 text-center border border-cs-border animate-fade-in">
+            <div class="w-16 h-16 gradient-success rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-check text-white text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2" id="successTitle">تم بنجاح!</h3>
+            <p class="text-gray-400 text-sm mb-6" id="successMessage">تمت العملية بنجاح</p>
+            <button id="successBtn" class="w-full gradient-success text-white font-semibold py-3 rounded-lg transition active:scale-95">
+                حسناً
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center max-w-md mx-auto">
+        <div class="bg-cs-card rounded-2xl p-8 text-center border border-cs-border animate-fade-in">
+            <div class="w-16 h-16 bg-cs-danger bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-exclamation text-cs-danger text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2" id="errorTitle">حدث خطأ!</h3>
+            <p class="text-gray-400 text-sm mb-6" id="errorMessage">حدث خطأ في العملية</p>
+            <button id="errorBtn" class="w-full bg-cs-danger text-white font-semibold py-3 rounded-lg transition active:scale-95">
+                حسناً
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ============ STATE MANAGEMENT ============
+        const state = {
+            balance: 7250.00,
+            currentTab: 'home',
+            nfcActive: false,
+            transactions: [
+                { id: 1, type: 'deposit', amount: 500, status: 'completed', date: '2024-01-15', method: 'بطاقة ائتمان' },
+                { id: 2, type: 'transfer', amount: 250, status: 'completed', date: '2024-01-14', method: 'تحويل مباشر' },
+                { id: 3, type: 'withdraw', amount: 1000, status: 'pending', date: '2024-01-13', method: 'محفظة رقمية' },
+                { id: 4, type: 'deposit', amount: 750, status: 'completed', date: '2024-01-12', method: 'تحويل بنكي' },
+                { id: 5, type: 'transfer', amount: 100, status: 'completed', date: '2024-01-11', method: 'تحويل مباشر' },
+            ]
+        };
+
+        // ============ UTILITY FUNCTIONS ============
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('ar-EG', {
+                style: 'currency',
+                currency: 'EGP',
+                minimumFractionDigits: 2
+            }).format(amount).replace('ج.م', '').trim() + ' ج.م';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            if (date.toDateString() === today.toDateString()) return 'اليوم';
+            if (date.toDateString() === yesterday.toDateString()) return 'أمس';
+            
+            return new Intl.DateTimeFormat('ar-EG', {
+                month: 'short',
+                day: 'numeric'
+            }).format(date);
+        }
+
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function hideModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // ============ NFC FUNCTIONALITY ============
+        class NFCHandler {
+            constructor() {
+                this.timeout = 15000; // 15 seconds
+                this.scanTimer = null;
+                this.timeRemaining = 15;
+            }
+
+            async startScan() {
+                if (!('NDEFReader' in window)) {
+                    showError('Web NFC غير مدعوم في متصفحك');
+                    return;
+                }
+
+                const scanBtn = document.getElementById('nfcScanBtn');
+                const timer = document.getElementById('nfcTimer');
+                const status = document.getElementById('nfcStatus');
+
+                scanBtn.style.display = 'none';
+                timer.classList.remove('hidden');
+                status.textContent = 'جاري البحث...';
+                state.nfcActive = true;
+                this.timeRemaining = 15;
+
+                // Start countdown
+                this.scanTimer = setInterval(() => {
+                    this.timeRemaining--;
+                    document.getElementById('nfcCountdown').textContent = this.timeRemaining;
+                    const progressWidth = (this.timeRemaining / 15) * 100;
+                    document.getElementById('nfcProgress').style.width = progressWidth + '%';
+
+                    if (this.timeRemaining <= 0) {
+                        this.stopScan(false);
+                    }
+                }, 1000);
+
+                try {
+                    const ndef = new NDEFReader();
+                    await ndef.scan();
+
+                    ndef.onreading = (event) => {
+                        this.handleNFCData(event);
+                    };
+
+                    ndef.onreadingerror = () => {
+                        this.stopScan(false);
+                    };
+                } catch (error) {
+                    // Simulate NFC scan for demo
+                    setTimeout(() => {
+                        this.handleNFCData({
+                            serialNumber: '04A1B2C3D4E5',
+                            records: [{ recordType: 'text', data: 'Demo NFC Tag' }]
+                        });
+                    }, 2000);
+                }
+            }
+
+            handleNFCData(event) {
+                this.stopScan(true);
+                const result = document.getElementById('nfcResult');
+                const resultText = document.getElementById('nfcResultText');
+
+                resultText.innerHTML = `
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-check-circle text-cs-success"></i>
+                        <span class="font-semibold">تم قراءة البطاقة بنجاح</span>
+                    </div>
+                    <p class="text-xs">الرقم التسلسلي: <span class="font-mono">${event.serialNumber || 'N/A'}</span></p>
+                `;
+                result.classList.remove('hidden');
+            }
+
+            stopScan(success) {
+                clearInterval(this.scanTimer);
+                const scanBtn = document.getElementById('nfcScanBtn');
+                const timer = document.getElementById('nfcTimer');
+                const status = document.getElementById('nfcStatus');
+
+                scanBtn.style.display = 'flex';
+                timer.classList.add('hidden');
+                status.textContent = success ? 'مكتمل' : 'جاهز';
+                state.nfcActive = false;
+            }
+        }
+
+        const nfcHandler = new NFCHandler();
+
+        // ============ FEE CALCULATOR ============
+        class FeeCalculator {
+            constructor() {
+                this.rates = {
+                    transfer: { normal: 0.01, fast: 0.015, instant: 0.02 },
+                    deposit: { normal: 0, fast: 0.005, instant: 0.01 },
+                    withdraw: { normal: 0.02, fast: 0.025, instant: 0.03 }
+                };
+            }
+
+            calculate(amount, type, speed) {
+                const rate = this.rates[type][speed] || 0;
+                const fee = amount * rate;
+                const total = amount + fee;
+                return { fee: Math.max(fee, 5), total };
+            }
+        }
+
+        const feeCalculator = new FeeCalculator();
+
+        // ============ TRANSACTION HISTORY ============
+        function renderTransactions(filter = 'all') {
+            const list = document.getElementById('transactionsList');
+            list.innerHTML = '';
+
+            const filtered = filter === 'all' 
+                ? state.transactions 
+                : state.transactions.filter(t => t.type === filter);
+
+            filtered.forEach(t => {
+                const icons = {
+                    deposit: 'fa-arrow-down',
+                    withdraw: 'fa-arrow-up',
+                    transfer: 'fa-exchange-alt'
+                };
+                
+                const statusClass = t.status === 'completed' ? 'success' : 'pending';
+                const statusText = t.status === 'completed' ? 'مكتمل' : 'قيد المراجعة';
+
+                const item = document.createElement('div');
+                item.className = `transaction-item bg-cs-surface border border-cs-border rounded-lg p-4 ${statusClass}`;
+                item.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: ${t.type === 'deposit' ? 'rgba(0, 200, 83, 0.2)' : t.type === 'withdraw' ? 'rgba(255, 171, 0, 0.2)' : 'rgba(0, 102, 255, 0.2)'}">
+                                <i class="fas ${icons[t.type]}" style="color: ${t.type === 'deposit' ? '#00c853' : t.type === 'withdraw' ? '#ffab00' : '#0066ff'}"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-white capitalize">${t.type === 'deposit' ? 'إيداع' : t.type === 'withdraw' ? 'سحب' : 'تحويل'}</p>
+                                <p class="text-xs text-gray-400">${t.method}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold" style="color: ${t.type === 'deposit' ? '#00c853' : '#ffab00'}">${t.type === 'deposit' ? '+' : '-'}${formatCurrency(t.amount)}</p>
+                            <p class="text-xs text-gray-400">${formatDate(t.date)}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-3">
+                        <span class="text-xs text-gray-400">${statusText}</span>
+                        <div class="w-2 h-2 rounded-full" style="background: ${t.status === 'completed' ? '#00c853' : '#ffab00'}"></div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // ============ EVENT LISTENERS ============
+        
+        // Tabs
+        document.querySelectorAll('.tab-nav').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                state.currentTab = tab;
+
+                // Update tab UI
+                document.querySelectorAll('.tab-nav').forEach(b => b.classList.remove('tab-active'));
+                document.querySelectorAll('.tab-nav').forEach(b => b.classList.add('tab-inactive'));
+                btn.classList.add('tab-active');
+                btn.classList.remove('tab-inactive');
+
+                // Show/hide content
+                if (tab === 'home') {
+                    document.getElementById('tabContent').classList.add('hidden');
+                } else {
+                    document.getElementById('tabContent').classList.remove('hidden');
+                    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+                    document.getElementById(tab + 'Tab').classList.remove('hidden');
+                    
+                    if (tab === 'history') {
+                        renderTransactions('all');
+                    }
+                }
+            });
+        });
+
+        // Filter transactions
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.remove('bg-cs-primary', 'text-white');
+                    b.classList.add('bg-cs-surface', 'text-gray-300');
+                });
+                btn.classList.remove('bg-cs-surface', 'text-gray-300');
+                btn.classList.add('bg-cs-primary', 'text-white');
+                renderTransactions(btn.dataset.filter);
+            });
+        });
+
+        // NFC
+        document.getElementById('nfcScanBtn').addEventListener('click', () => nfcHandler.startScan());
+
+        // Fee Calculator
+        document.getElementById('calculateFeeBtn').addEventListener('click', () => {
+            const amount = parseFloat(document.getElementById('feeAmount').value);
+            const type = document.getElementById('feeType').value;
+            const speed = document.getElementById('feeSpeed').value;
+
+            if (!amount || amount <= 0) {
+                showError('أدخل مبلغاً صحيحاً');
+                return;
+            }
+
+            const { fee, total } = feeCalculator.calculate(amount, type, speed);
+            const resultDiv = document.getElementById('feeResult');
+
+            document.getElementById('feeBase').textContent = formatCurrency(amount);
+            document.getElementById('feeAmount').textContent = formatCurrency(fee);
+            document.getElementById('feeTotal').textContent = formatCurrency(total);
+            resultDiv.classList.remove('hidden');
+        });
+
+        // Deposit Modal
+        document.getElementById('depositBtn').addEventListener('click', () => showModal('depositModal'));
+        document.getElementById('depositModalClose').addEventListener('click', () => hideModal('depositModal'));
+        document.getElementById('depositModalClose2').addEventListener('click', () => hideModal('depositModal'));
+
+        document.getElementById('depositMethod').addEventListener('change', (e) => {
+            const methods = {
+                'card': 'بطاقة: 1234 **** **** 5678',
+                'bank': 'حساب بنكي: EG1234567890',
+                'wallet': 'محفظة: +201001234567',
+                'cash': 'في الفرع الرئيسي'
+            };
+            document.getElementById('depositInfo').innerHTML = `<p>${methods[e.target.value]}</p>`;
+        });
+
+        document.getElementById('confirmDepositBtn').addEventListener('click', () => {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            if (!amount || amount <= 0) {
+                showError('أدخل مبلغاً صحيحاً');
+                return;
+            }
+            hideModal('depositModal');
+            state.balance += amount;
+            document.getElementById('balanceAmount').textContent = formatCurrency(state.balance);
+            state.transactions.unshift({
+                id: state.transactions.length + 1,
+                type: 'deposit',
+                amount: amount,
+                status: 'completed',
+                date: new Date().toISOString().split('T')[0],
+                method: 'إيداع'
+            });
+            showSuccess('تم إضافة المبلغ بنجاح!', 'تمت عملية الإيداع');
+        });
+
+        // Withdraw Modal
+        document.getElementById('withdrawBtn').addEventListener('click', () => showModal('withdrawModal'));
+        document.getElementById('withdrawModalClose').addEventListener('click', () => hideModal('withdrawModal'));
+        document.getElementById('withdrawModalClose2').addEventListener('click', () => hideModal('withdrawModal'));
+
+        document.getElementById('withdrawAmount').addEventListener('input', (e) => {
+            const amount = parseFloat(e.target.value);
+            if (amount) {
+                const fee = amount * 0.02;
+                const net = amount - fee;
+                document.getElementById('withdrawFee').textContent = formatCurrency(fee);
+                document.getElementById('withdrawNet').textContent = formatCurrency(net);
+            }
+        });
+
+        document.getElementById('confirmWithdrawBtn').addEventListener('click', () => {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            if (!amount || amount <= 0) {
+                showError('أدخل مبلغاً صحيحاً');
+                return;
+            }
+            if (amount > state.balance) {
+                showError('الرصيد غير كافي');
+                return;
+            }
+            hideModal('withdrawModal');
+            state.balance -= amount;
+            document.getElementById('balanceAmount').textContent = formatCurrency(state.balance);
+            state.transactions.unshift({
+                id: state.transactions.length + 1,
+                type: 'withdraw',
+                amount: amount,
+                status: 'pending',
+                date: new Date().toISOString().split('T')[0],
+                method: 'سحب'
+            });
+            showSuccess('تم تقديم طلب السحب', 'سيتم معالجة الطلب قريباً');
+        });
+
+        // Exchange
+        document.getElementById('executeExchangeBtn').addEventListener('click', () => {
+            const recipient = document.getElementById('recipientWallet').value;
+            const amount = parseFloat(document.getElementById('exchangeAmount').value);
+            
+            if (!recipient || !amount || amount <= 0) {
+                showError('تحقق من البيانات المدخلة');
+                return;
+            }
+            if (amount > state.balance) {
+                showError('الرصيد غير كافي');
+                return;
+            }
+
+            state.balance -= amount;
+            document.getElementById('balanceAmount').textContent = formatCurrency(state.balance);
+            state.transactions.unshift({
+                id: state.transactions.length + 1,
+                type: 'transfer',
+                amount: amount,
+                status: 'completed',
+                date: new Date().toISOString().split('T')[0],
+                method: 'تحويل مباشر'
+            });
+            
+            document.getElementById('recipientWallet').value = '';
+            document.getElementById('exchangeAmount').value = '';
+            document.getElementById('exchangeNote').value = '';
+            
+            showSuccess(`تم تحويل ${formatCurrency(amount)}`, `إلى المحفظة: ${recipient.slice(-4)}`);
+        });
+
+        // Modals
+        function showSuccess(title, message) {
+            document.getElementById('successTitle').textContent = title;
+            document.getElementById('successMessage').textContent = message;
+            showModal('successModal');
+        }
+
+        function showError(message) {
+            document.getElementById('errorTitle').textContent = 'تحذير';
+            document.getElementById('errorMessage').textContent = message;
+            showModal('errorModal');
+        }
+
+        document.getElementById('successBtn').addEventListener('click', () => hideModal('successModal'));
+        document.getElementById('errorBtn').addEventListener('click', () => hideModal('errorModal'));
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                alert('تم تسجيل الخروج بنجاح');
+            }
+        });
+
+        // Initialize
+        document.getElementById('balanceAmount').textContent = formatCurrency(state.balance);
+        document.querySelectorAll('.tab-nav')[0].classList.add('tab-active');
+        document.getElementById('depositMethod').dispatchEvent(new Event('change'));
+        document.getElementById('withdrawMethod').addEventListener('change', (e) => {
+            const methods = {
+                'bank': 'حساب بنكي: EG1234567890',
+                'wallet': 'محفظة: +201001234567',
+                'cash': 'سحب من الفرع الرئيسي'
+            };
+            document.getElementById('withdrawInfo').innerHTML = `<p>${methods[e.target.value]}</p>`;
+        });
+        document.getElementById('withdrawMethod').dispatchEvent(new Event('change'));
+    </script>
+</body>
+</html>
