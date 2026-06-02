@@ -1,0 +1,91 @@
+{
+  "configVersion": "2.0",
+  "timestamp": "2026-06-02T00:00:00Z",
+  "environment": "production",
+  "admin": {
+    "enabled": true,
+    "accessMethod": "localStorage-based authentication",
+    "securityLevel": "medium",
+    "notes": "Access via double-tap header or admin toggle in settings"
+  },
+  "profitMargin": {
+    "current": 2.5,
+    "minimum": 0.5,
+    "maximum": 10,
+    "unit": "percent",
+    "description": "Multiplier applied to all calculated fees"
+  },
+  "fees": {
+    "transfer": {
+      "normal": 0.01,
+      "fast": 0.015,
+      "instant": 0.02,
+      "baseMinimum": 5
+    },
+    "deposit": {
+      "normal": 0,
+      "fast": 0.005,
+      "instant": 0.01,
+      "baseMinimum": 0
+    },
+    "withdraw": {
+      "normal": 0.02,
+      "fast": 0.025,
+      "instant": 0.03,
+      "baseMinimum": 5
+    }
+  },
+  "limits": {
+    "transaction": {
+      "minimum": 10,
+      "maximum": 50000
+    },
+    "daily": 100000,
+    "monthly": 500000
+  },
+  "monitoring": {
+    "enabled": true,
+    "healthCheckInterval": 5000,
+    "stateBackupInterval": 60000,
+    "errorLoggingEnabled": true,
+    "autoRecoveryEnabled": true
+  },
+  "features": {
+    "nfc": {
+      "enabled": true,
+      "timeoutSeconds": 15,
+      "fallbackEnabled": true
+    },
+    "feeCalculator": {
+      "enabled": true,
+      "realTimeUpdates": true
+    },
+    "transactionHistory": {
+      "enabled": true,
+      "maxStoredTransactions": 500
+    },
+    "adminPanel": {
+      "enabled": true,
+      "requiresAuth": true
+    }
+  },
+  "storageConfiguration": {
+    "localStorage": {
+      "enabled": true,
+      "keys": [
+        "cashswap_state",
+        "cashswap_transactions",
+        "cashswap_admin_config",
+        "cashswap_health",
+        "cashswap_backup"
+      ]
+    },
+    "sessionStorage": {
+      "enabled": true,
+      "keys": [
+        "cashswap_session_admin",
+        "cashswap_temp_state"
+      ]
+    }
+  }
+}

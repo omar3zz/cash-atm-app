@@ -1,0 +1,165 @@
+{
+  "projectName": "CashSwap P2P Platform",
+  "version": "2.0.0",
+  "description": "Enterprise-grade autonomous peer-to-peer cash exchange platform with autonomous self-monitoring and dynamic profit margin controls",
+  "author": "OMAR",
+  "buildDate": "2026-06-02",
+  "status": "production",
+  "architecture": {
+    "type": "Autonomous Decentralized Application",
+    "mode": "Client-Side SPA with LocalStorage State Management",
+    "framework": "Vanilla JavaScript + Tailwind CSS",
+    "compatibility": ["ES6+", "Web NFC API", "LocalStorage", "IndexedDB-ready"]
+  },
+  "coreModules": {
+    "StateManager": {
+      "description": "Central state management hub",
+      "responsibilities": [
+        "Global application state",
+        "LocalStorage persistence",
+        "State validation and restoration",
+        "Backup and recovery mechanisms"
+      ],
+      "file": "index.html",
+      "section": "STATE_MANAGER_CORE"
+    },
+    "AdminController": {
+      "description": "Administrative control panel for profit margin and fee management",
+      "responsibilities": [
+        "Admin authentication",
+        "Profit margin configuration",
+        "Service fee adjustment",
+        "Transaction limits management",
+        "Real-time parameter updates"
+      ],
+      "file": "index.html",
+      "section": "ADMIN_CONTROLLER",
+      "accessKey": "localStorage.adminAuth",
+      "visibility": "Hidden until authenticated"
+    },
+    "FeeCalculationEngine": {
+      "description": "Dynamic fee calculation system",
+      "responsibilities": [
+        "Real-time fee computation",
+        "Profit margin scaling",
+        "Transaction type differentiation",
+        "Speed-based premium calculation"
+      ],
+      "file": "index.html",
+      "section": "FEE_ENGINE"
+    },
+    "AutonomousMonitoring": {
+      "description": "Self-healing error detection and recovery",
+      "responsibilities": [
+        "Real-time error catching",
+        "State validation",
+        "Automatic fallback triggers",
+        "Health check intervals",
+        "Graceful degradation"
+      ],
+      "file": "index.html",
+      "section": "AUTONOMOUS_MONITOR"
+    },
+    "NFCHandler": {
+      "description": "Web NFC reading with timeout management",
+      "responsibilities": [
+        "NFC device scanning",
+        "15-second timeout enforcement",
+        "Data validation",
+        "Error recovery"
+      ],
+      "file": "index.html",
+      "section": "NFC_HANDLER"
+    },
+    "TransactionProcessor": {
+      "description": "Core transaction execution logic",
+      "responsibilities": [
+        "Deposit processing",
+        "Withdrawal processing",
+        "Peer-to-peer transfers",
+        "Fee deduction",
+        "Balance updates",
+        "History logging"
+      ],
+      "file": "index.html",
+      "section": "TRANSACTION_PROCESSOR"
+    }
+  },
+  "adminConfiguration": {
+    "profitMarginRange": {
+      "min": 0.5,
+      "max": 10,
+      "unit": "percent",
+      "description": "Global profit margin applied to all transaction fees"
+    },
+    "serviceFees": {
+      "transfer": {
+        "base": 0.01,
+        "fast": 0.015,
+        "instant": 0.02
+      },
+      "deposit": {
+        "base": 0,
+        "fast": 0.005,
+        "instant": 0.01
+      },
+      "withdraw": {
+        "base": 0.02,
+        "fast": 0.025,
+        "instant": 0.03
+      }
+    },
+    "transactionLimits": {
+      "minAmount": 10,
+      "maxAmount": 50000,
+      "dailyLimit": 100000
+    },
+    "storageKey": "cashswap_admin_config"
+  },
+  "stateSchema": {
+    "balance": "number",
+    "transactions": "array<object>",
+    "adminAuth": "boolean",
+    "profitMargin": "number",
+    "serviceFees": "object",
+    "transactionLimits": "object",
+    "appHealth": "object",
+    "lastBackup": "timestamp"
+  },
+  "monitoring": {
+    "healthCheckInterval": "5000ms",
+    "stateValidationInterval": "10000ms",
+    "backupInterval": "60000ms",
+    "errorThreshold": 3,
+    "autoRecoveryEnabled": true
+  },
+  "failsafes": [
+    "State corruption detection",
+    "Balance inconsistency detection",
+    "Fee calculation validation",
+    "Transaction integrity checks",
+    "Automatic state restoration",
+    "Graceful error messaging",
+    "User session preservation"
+  ],
+  "dependencies": {
+    "external": [
+      "https://cdn.tailwindcss.com",
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css",
+      "https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900"
+    ],
+    "native": [
+      "LocalStorage API",
+      "Web NFC API (optional)",
+      "Date/Time API",
+      "Number Formatting API"
+    ]
+  },
+  "deployment": {
+    "method": "GitHub Pages / Static Hosting",
+    "requiresBackend": false,
+    "requiresDatabase": false,
+    "requiresAuthentication": "Optional (Built-in Admin Auth)",
+    "dataEncryption": "Client-side validation only"
+  }
+}
