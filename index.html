@@ -3,187 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CashSwap - نظام تبادل الكاش الذكي</title>
-    <style>
-        :root {
-            --primary-color: #0f172a;
-            --secondary-color: #1e293b;
-            --accent-color: #10b981;
-            --accent-hover: #059669;
-            --bg-color: #f1f5f9;
-            --text-color: #334155;
-            --white: #ffffff;
-            --danger: #ef4444;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; }
-        header { background-color: var(--primary-color); color: var(--white); padding: 20px; text-align: center; box-shadow: var(--shadow); position: relative; }
-        header h1 { font-size: 1.5rem; font-weight: 700; }
-        header .admin-btn { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; cursor: pointer; }
-        main { flex: 1; overflow-y: auto; padding: 20px; max-width: 600px; margin: 0 auto; width: 100%; }
-        .tabs { display: flex; margin-bottom: 20px; background: var(--white); border-radius: 12px; padding: 5px; box-shadow: var(--shadow); }
-        .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; border-radius: 8px; font-weight: 600; cursor: pointer; color: var(--text-color); }
-        .tab-btn.active { background-color: var(--primary-color); color: var(--white); }
-        .card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: var(--shadow); margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: var(--secondary-color); }
-        input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; outline: none; background: #f8fafc; }
-        input:focus { border-color: var(--accent-color); background: var(--white); }
-        .btn-action { width: 100%; padding: 16px; background-color: var(--accent-color); color: var(--white); border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
-        .item-list { list-style: none; }
-        .list-item { border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 12px; background: var(--white); display: flex; justify-content: space-between; align-items: center; }
-        .item-info h3 { font-size: 1.1rem; color: var(--primary-color); margin-bottom: 5px; }
-        .price-tag { font-weight: 800; font-size: 1.3rem; color: var(--accent-color); }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
-        .modal-content { background: var(--white); padding: 25px; border-radius: 16px; width: 100%; max-width: 350px; position: relative; }
-        .close-modal { position: absolute; left: 15px; top: 15px; font-size: 1.5rem; cursor: pointer; color: #64748b; }
-        .toast { position: fixed; bottom: 20px; right: 20px; left: 20px; background: var(--primary-color); color: var(--white); padding: 15px; border-radius: 10px; text-align: center; transform: translateY(150%); transition: transform 0.3s; z-index: 200; }
-        .toast.show { transform: translateY(0); }
-        .hidden { display: none; }
-        .text-center { text-align: center; }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>CashSwap</h1>
-        <button class="admin-btn" onclick="openAdminModal()">مدير</button>
-    </header>
-    <main>
-        <div class="tabs">
-            <button class="tab-btn active" id="tab-request" onclick="switchTab('request')">طلب سحب كاش</button>
-            <button class="tab-btn" id="tab-supply" onclick="switchTab('supply')">كاش متاح</button>
-        </div>
-        <section id="view-request">
-            <div class="card">
-                <h2 class="text-center" style="margin-bottom: 20px;">طلب كاش نقدي</h2>
-                <form id="requestForm" onsubmit="submitRequest(event)">
-                    <div class="form-group">
-                        <label>المبلغ المطلوب ($)</label>
-                        <input type="number" id="reqAmount" placeholder="مثال: 5000" required min="1">
-                    </div>
-                    <div class="form-group">
-                        <label>الموقع (منطقة / حي)</label>
-                        <input type="text" id="reqLocation" placeholder="أدخل اسم المنطقة" required>
-                    </div>
-                    <div class="form-group">
-                        <label>رقم الهاتف للتواصل</label>
-                        <input type="tel" id="reqPhone" placeholder="01xxxxxxxx" required>
-                    </div>
-                    <button type="submit" class="btn-action">إرسال الطلب</button>
-                </form>
-            </div>
-        </section>
-        <section id="view-supply" class="hidden">
-            <div class="card">
-                <h2 class="text-center">طلبات قريبة</h2>
-                <p class="text-center" style="color: #64748b; margin-bottom: 15px;">هامش ربح الموقع الحالي: <span id="currentMarginDisplay">2</span>%</p>
-                <ul class="item-list" id="requestsList"></ul>
-            </div>
-        </section>
-    </main>
-    <div id="adminModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeAdminModal()">&times;</span>
-            <h2 class="text-center" style="margin-bottom: 20px;">لوحة تحكم المدير</h2>
-            <div id="admin-login-sec">
-                <div class="form-group">
-                    <label>كلمة المرور</label>
-                    <input type="password" id="adminPassword" placeholder="الباسورد الافتراضي 1234">
-                </div>
-                <button class="btn-action" onclick="checkAdminPassword()">تسجيل دخول</button>
-            </div>
-            <div id="admin-settings-sec" class="hidden">
-                <div class="form-group">
-                    <label>تعديل هامش ربح الموقع (%)</label>
-                    <input type="number" id="profitMarginInput" min="0" max="100" step="0.1">
-                </div>
-                <button class="btn-action" onclick="saveProfitMargin()">حفظ التعديلات</button>
-            </div>
-        </div>
-    </div>
-    <div id="toast" class="toast">تمت العملية بنجاح!</div>
+    <title>CashSwap مصر | منصة تبادل الكاش النقدي</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <script>
-        let state = { profitMargin: 2.0, requests: [] };
-        function loadData() {
-            const savedMargin = localStorage.getItem('cash_margin');
-            if (savedMargin) state.profitMargin = parseFloat(savedMargin);
-            const savedReqs = localStorage.getItem('cash_reqs');
-            if (savedReqs) state.requests = JSON.parse(savedReqs);
-            document.getElementById('currentMarginDisplay').innerText = state.profitMargin;
-            document.getElementById('profitMarginInput').value = state.profitMargin;
-        }
-        function switchTab(tab) {
-            document.getElementById('tab-request').classList.remove('active');
-            document.getElementById('tab-supply').classList.remove('active');
-            document.getElementById('view-request').classList.add('hidden');
-            document.getElementById('view-supply').classList.add('hidden');
-            if (tab === 'request') {
-                document.getElementById('tab-request').classList.add('active');
-                document.getElementById('view-request').classList.remove('hidden');
-            } else {
-                document.getElementById('tab-supply').classList.add('active');
-                document.getElementById('view-supply').classList.remove('hidden');
-                renderRequests();
-            }
-        }
-        function submitRequest(event) {
-            event.preventDefault();
-            const amount = parseFloat(document.getElementById('reqAmount').value);
-            const location = document.getElementById('reqLocation').value;
-            const phone = document.getElementById('reqPhone').value;
-            const newRequest = { id: Date.now(), amount, location, phone, date: new Date().toLocaleTimeString('ar-EG') };
-            state.requests.unshift(newRequest);
-            localStorage.setItem('cash_reqs', JSON.stringify(state.requests));
-            showToast("تم نشر طلبك بنجاح!");
-            document.getElementById('requestForm').reset();
-            setTimeout(() => switchTab('supply'), 1000);
-        }
-        function renderRequests() {
-            const list = document.getElementById('requestsList');
-            list.innerHTML = "";
-            if (state.requests.length === 0) {
-                list.innerHTML = `<li class="text-center" style="padding: 20px; color: #94a3b8;">لا توجد طلبات حالياً</li>`;
-                return;
-            }
-            state.requests.forEach(req => {
-                const fee = (req.amount * (state.profitMargin / 100)).toFixed(2);
-                const li = document.createElement('li');
-                li.className = 'list-item';
-                li.innerHTML = `
-                    <div class="item-info">
-                        <h3>مطلوب كاش: ${req.amount}</h3>
-                        <p>📍 الموقع: ${req.location}</p>
-                        <p style="font-size:0.8rem; color:#94a3b8;">الرسوم المحسوبة للموقع: ${fee}</p>
-                    </div>
-                    <div>
-                        <a href="tel:${req.phone}" class="btn-action" style="padding: 8px 12px; font-size:0.85rem; text-decoration:none;">تواصل</a>
-                    </div>`;
-                list.appendChild(li);
-            });
-        }
-        function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
-        function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
-        function checkAdminPassword() {
-            if (document.getElementById('adminPassword').value === '1234') {
-                document.getElementById('admin-login-sec').classList.add('hidden');
-                document.getElementById('admin-settings-sec').classList.remove('hidden');
-            } else { showToast("الباسورد خطأ!"); }
-        }
-        function saveProfitMargin() {
-            const val = parseFloat(document.getElementById('profitMarginInput').value);
-            state.profitMargin = val;
-            localStorage.setItem('cash_margin', val);
-            document.getElementById('currentMarginDisplay').innerText = val;
-            showToast("تم تحديث الهامش!");
-            closeAdminModal();
-            if(!document.getElementById('view-supply').classList.contains('hidden')) renderRequests();
-        }
-        function showToast(msg) {
-            const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000);
-        }
-        window.onload = loadData;
-    </script>
-</body>
-</html>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { cairo: ['Cairo', 'sans-serif'] },
+                    colors: {
+                        cs: {
+                            dark: '#0a0e17',
+                            card: '#131a2a',
+                            surface: '#1a2235',
+                            border: '#2a3548',
+                            primary: '#0066ff',
+                            accent: '#00e676',
+                            success: '#00c853',
+                            warning: '#ffab00',
+                            danger: '#ff5252',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 0.4s ease-
